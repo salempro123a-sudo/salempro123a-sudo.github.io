@@ -824,7 +824,20 @@ try{
       }else{
         status('Spotify conectado. Haz clic en una carátula para reproducir aquí.');
       }
-    }catch(e){status(e.message,true)}
+    }catch(e){
+      status(e.message,true);
+      if(!account){
+        // A saved session can be valid while Spotify temporarily rejects /me.
+        // Render the public page without clearing authorization or retrying login.
+        await loadHome();
+        await loadPlaylists();
+        await loadRecent();
+        renderArtistOrbit(publicSnapshot?.artists||[]);
+        ready=true;
+        const requested=new URLSearchParams(location.search).get('playlist');
+        if(requested&&/^[a-zA-Z0-9]{22}$/.test(requested))await loadShared(requested);
+      }
+    }
   }else{
     await loadHome();
     await loadPlaylists();
