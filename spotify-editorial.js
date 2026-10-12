@@ -302,9 +302,9 @@ function renderOtherDetails(){
   const ownerOnline=account?.id===owner;
   const published=!!publicSnapshot?.tracks?.length;
   $('pick-period').textContent=ownerOnline?'ÚLTIMAS SEMANAS':published?'MIS FAVORITAS':'MI SELECCIÓN';
-  $('collection-count-1').textContent=list.tracks.length?list.tracks.length+' CANCIONES ↗':'';
-  $('collection-count-2').textContent=list.playlists.length?list.playlists.length+' LISTAS ↗':'';
-  $('collection-count-3').textContent=window.TransmissionTaste?.getLiked?.().length?window.TransmissionTaste.getLiked().length+' CANCIONES ↗':publicSnapshot?.liked?.length?publicSnapshot.liked.length+' CANCIONES ↗':'';
+  $('collection-count-1').textContent=list.tracks.length?list.tracks.length+' CANCIONES':'';
+  $('collection-count-2').textContent=list.playlists.length?list.playlists.length+' LISTAS':'';
+  $('collection-count-3').textContent=window.TransmissionTaste?.getLiked?.().length?window.TransmissionTaste.getLiked().length+' CANCIONES':publicSnapshot?.liked?.length?publicSnapshot.liked.length+' CANCIONES':'';
   $('owner-display').textContent='';
   const accountName=$('account-name');if(accountName)accountName.textContent=account?.display_name||'CONECTAR';
   $('connect-button').textContent=account?'CONECTADO ✓':'CONECTAR';
