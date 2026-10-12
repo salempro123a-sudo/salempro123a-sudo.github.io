@@ -409,6 +409,23 @@ el('top-refresh').onclick=()=>void refreshRotation();
 play.onclick=()=>void playLiked();
 more.onclick=()=>void loadNext();
 el('tm-liked-prev').onclick=previousLiked;
+document.addEventListener('tm:library-changed',event=>{
+ if(!ownerConnected)return;
+ const id=event.detail?.id,saved=event.detail?.saved;
+ if(!id)return;
+ if(saved===true){
+   const current=rt?.currentTrack;
+   if(current?.id===id&&!liked.some(x=>x.id===id)){
+     liked.unshift(current);likesTotal++;page=0;
+   }
+ }else if(saved===false){
+   const before=liked.length;
+   liked=liked.filter(t=>t.id!==id);
+   if(liked.length!==before)likesTotal=Math.max(0,likesTotal-1);
+ }
+ render();
+});
+
 window.addEventListener?.('resize',render);
 window.TransmissionTaste={
  arrangeSession,
