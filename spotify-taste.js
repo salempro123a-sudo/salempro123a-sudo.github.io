@@ -22,7 +22,7 @@ const unique=items=>{
  }
  return out;
 };
-let liked=[],likesTotal=0,canFetchMore=false,page=0,loading=false,likedOffset=0,likedOrder='new',modalOpen=false,modalFocus=null;
+let liked=[],likesTotal=0,canFetchMore=false,page=0,loading=false,likedOffset=0,likedOrder='new',modalOpen=false,modalFocus=null,likedRequest=null;
 const pageSize=()=>window.matchMedia?.('(max-width:540px)').matches?2:window.matchMedia?.('(max-width:700px)').matches?3:6;
 let recentEvents=[],ownerTop=[],rt=null,ownerConnected=false,accountReady=false;
 const likedGrid=el('tm-liked-grid'),more=el('tm-liked-more'),play=el('tm-liked-play'),label=el('liked-kicker');
@@ -48,7 +48,7 @@ function render(){
      const cover=create('button','tm-liked-art');cover.type='button';
      cover.setAttribute('aria-label','Reproducir '+t.name);cover.title=t.name;
      if(image(t))cover.style.backgroundImage='url("'+image(t)+'")';
-     cover.onclick=()=>void rt?.playTrack(t);
+     cover.onclick=()=>void playLikedFrom(t);
      const meta=create('div','tm-liked-caption');
      meta.append(create('strong','',t.name),create('small','',artists(t)));
      card.append(cover,meta);likedGrid.append(card);
@@ -77,30 +77,48 @@ function renderLikedAll(){
    const art=create('span','tm-liked-all-art'),pic=image(t);if(pic)art.style.backgroundImage='url("'+pic+'")';
    const caption=create('span','tm-liked-all-name');caption.append(create('strong','',t.name),create('small','',artists(t)));
    card.append(art,caption);
-   card.onclick=()=>{closeLikedAll();void rt.playTrack(t)};
+   card.onclick=()=>{closeLikedAll();void playLikedFrom(t)};
    host.append(card);
  }
  if(!tracks.length)host.append(create('p','tm-liked-empty','Sin coincidencias.'));
  el('tm-liked-total').textContent=tracks.length+' / '+(likesTotal||liked.length);
  el('tm-liked-load').hidden=!(ownerConnected&&canFetchMore);
 }
-async function fetchLikedBatch(){
- if(!ownerConnected||!canFetchMore||loading)return false;
+function fetchLikedBatch(){
+ if(likedRequest)return likedRequest;
+ if(!ownerConnected||!canFetchMore)return Promise.resolve(false);
  loading=true;more.disabled=true;
- try{
+ likedRequest=(async()=>{
+  try{
    const data=await sp.api('/me/tracks?limit=50&offset='+likedOffset);
    const rows=data?.items||[];
    likedOffset+=rows.length;
    const seen=new Set(liked.map(t=>t.id));
    for(const row of rows){
-     const t=row?.track;
-     if(valid(t)&&!seen.has(t.id)){liked.push(t);seen.add(t.id)}
+    const t=row?.track;
+    if(valid(t)&&!seen.has(t.id)){liked.push(t);seen.add(t.id)}
    }
    likesTotal=Math.max(liked.length,Number(data?.total)||liked.length);
    canFetchMore=!!data?.next&&rows.length>0&&likedOffset<likesTotal;
    return rows.length>0
- }catch(e){status('No se pudieron cargar más favoritas: '+e.message,true);return false}
- finally{loading=false;render()}
+  }catch(e){status('No se pudieron cargar más favoritas: '+e.message,true);return false}
+  finally{loading=false;likedRequest=null;render()}
+ })();
+ return likedRequest;
+}
+async function loadLikedSelection(){
+ // Twenty small pages cover up to 1,050 saved songs without an unbounded request loop.
+ for(let i=0;ownerConnected&&canFetchMore&&i<20;i++){
+  if(!await fetchLikedBatch())break;
+ }
+ return sortedLiked();
+}
+async function playLikedFrom(track){
+ if(!rt?.account)return rt?.playTrack(track);
+ rt.player?.activateElement?.();
+ const tracks=await loadLikedSelection();
+ const index=tracks.findIndex(t=>t.id===track.id);
+ return index>=0?rt.playSequence(tracks,index):false;
 }
 async function openLikedAll(){
  const dialog=el('tm-liked-modal');
@@ -151,6 +169,7 @@ function fillPlaylistRail(){
    button.onclick=()=>void rt.playTrack(track);
    rail.insertBefore(button,anchor);
  }
+ rail.style.setProperty('--tm-rail-rows',String(Math.max(1,Math.ceil(rail.querySelectorAll('.rail-item').length/2))));
 }
 
 async function loadFirst(){
@@ -224,7 +243,7 @@ function recentWeight(entries){
  return result;
 }
 async function startSongs(tracks){
- const playlist=unique(tracks).slice(0,40);
+ const playlist=unique(tracks);
  if(!playlist.length){status('No hay suficientes canciones disponibles.',true);return false}
  if(!rt?.account){status('Conecta Spotify para reproducir esta sesión.',true);return false}
  return !!await rt.playSequence(playlist);
@@ -396,7 +415,11 @@ async function playNow(){
  }catch(e){status('No pude preparar la sesión: '+e.message,true)}
  finally{button.disabled=false;caption.textContent=previous}
 }
-async function playLiked(){await startSongs(liked)}
+async function playLiked(){
+ if(play.disabled)return;
+ play.disabled=true;rt?.player?.activateElement?.();
+ try{await startSongs(await loadLikedSelection())}finally{render()}
+}
 async function fetchRecent(){
  if(!ownerConnected)return;
  if(rt.recent?.length){
@@ -500,24 +523,30 @@ document.addEventListener('tm:library-changed',event=>{
  if(saved===true){
    const current=rt?.currentTrack;
    if(current?.id===id&&!liked.some(x=>x.id===id)){
-     liked.unshift(current);likesTotal++;page=0;
+     liked.unshift(current);likesTotal++;likedOffset++;page=0;
    }
  }else if(saved===false){
    const before=liked.length;
    liked=liked.filter(t=>t.id!==id);
-   if(liked.length!==before)likesTotal=Math.max(0,likesTotal-1);
+   likesTotal=Math.max(0,likesTotal-1);
+    if(liked.length!==before)likedOffset=Math.max(0,likedOffset-1);
  }
  render();
 });
 
-window.addEventListener?.('resize',render);
+window.addEventListener?.('tm:owner-track',event=>{
+  const track=event.detail?.track;
+  if(ownerConnected&&valid(track))recentEvents=[{track},...recentEvents].slice(0,50);
+ });
+ window.addEventListener?.('resize',render);
 window.TransmissionTaste={
  arrangeSession,
  getOwnerLiked:()=>ownerConnected?unique(liked).slice(0,40):[],
  getPublicLiked:()=>unique(liked).slice(0,40),
  getNowSongs:()=>recentWeight(recentEvents),
  refreshRotation,surprisePlay,
- getLiked:()=>unique(liked)
+ getLiked:()=>unique(liked),
+  getTotal:()=>likesTotal||unique(liked).length
 };
 await prepare();
 })();

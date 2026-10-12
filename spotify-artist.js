@@ -35,14 +35,14 @@ async function open(name){
    const artist=tracks.flatMap(t=>t.artists).find(a=>a.name?.toLocaleLowerCase()===name.toLocaleLowerCase());
    if(artist?.id)$('tm-artist-external').href='https://open.spotify.com/artist/'+artist.id;
    songs.replaceChildren();
-   for(const track of tracks){
+   for(const [index,track] of tracks.entries()){
      const btn=make('button','tm-artist-row');btn.type='button';
      const cover=make('span','tm-artist-row-cover');const coverURL=img(track.album?.images?.[0]?.url);
      if(coverURL)cover.style.backgroundImage='url("'+coverURL+'")';
      const label=make('span','tm-artist-row-name',track.name);
      label.append(make('small','',track.album?.name||name));
      btn.append(cover,label,make('span','tm-artist-row-action','▶'));
-     btn.onclick=()=>{close();void rt.playTrack(track)};
+     btn.onclick=()=>{close();rt.player?.activateElement?.();void rt.playSequence(tracks,index)};
      songs.append(btn);
    }
    if(!tracks.length)songs.append(make('p','tm-playlist-message','Spotify no devolvió canciones para este artista.'));

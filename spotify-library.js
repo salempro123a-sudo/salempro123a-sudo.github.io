@@ -105,10 +105,10 @@ function renderTracks(){
 }
 async function loadTracks(){
  if(!active||trackLoading||!rt.account)return;
- const serial=requestSerial;trackLoading=true;
+ const serial=requestSerial,playlistId=active.id,offset=trackOffset;trackLoading=true;
  $('tm-playlist-next').disabled=true;
  try{
-   const data=await sp.api('/playlists/'+active.id+'/items?limit=50&offset='+trackOffset);
+   const data=await sp.api('/playlists/'+playlistId+'/items?limit=50&offset='+offset);
    if(serial!==requestSerial)return;
    addTrackPage(data);
  }catch(e){
@@ -119,13 +119,13 @@ async function loadTracks(){
      rt.status('Playlist: '+e.message,true);
      embedPlaylist(active);
    }
- }finally{trackLoading=false;$('tm-playlist-next').disabled=false}
+ }finally{if(serial===requestSerial){trackLoading=false;$('tm-playlist-next').disabled=false}}
 }
 async function openDetail(p){
  if(!validId(p?.id))return;
  if(shell.hidden)open();
  requestSerial++;
- active=p;trackRows=[];trackOffset=0;trackNext=false;
+ active=p;trackRows=[];trackOffset=0;trackNext=false;trackLoading=false;
  browsing(false);clearEmbed();
  $('tm-playlist-tracks').replaceChildren(create('p','tm-playlist-message','Preparando canciones…'));
  $('tm-playlist-next').hidden=true;
@@ -141,7 +141,7 @@ async function openDetail(p){
  }else embedPlaylist(p);
 }
 $('tm-library-close').onclick=close;
-$('tm-playlist-back').onclick=()=>{requestSerial++;active=null;browsing(true);search.focus()};
+$('tm-playlist-back').onclick=()=>{requestSerial++;active=null;trackLoading=false;browsing(true);search.focus()};
 $('tm-playlist-next').onclick=()=>void loadTracks();
 more.onclick=()=>void loadMore();
 search.oninput=render;

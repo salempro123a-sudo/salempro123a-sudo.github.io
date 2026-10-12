@@ -70,7 +70,7 @@ async function updateQueue(){
    button.onclick=async()=>{
      $('tm-mini-queue').disabled=true;
      try{
-       if(await rt.playSequence(tracks.slice(i)))queuePanel.hidden=true;
+       if(await rt.playSequence(tracks,i))queuePanel.hidden=true;
      }finally{$('tm-mini-queue').disabled=false}
    };
    queueContainer.append(button);

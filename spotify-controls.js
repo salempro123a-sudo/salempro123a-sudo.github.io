@@ -25,10 +25,14 @@ function updateUi(state){
  if(!userSeeking)positionUi();
  for(const buttonId of ['tm-seek','tm-volume'])$(buttonId).disabled=false;
  const repeat=$('tm-repeat'),shuffle=$('tm-shuffle');
- const repeatOn=!!state.repeat&&state.repeat!=='off',shuffleOn=!!state.shuffle;
+  const pending=!!rt.sequencePending;
+  shuffle.disabled=pending;repeat.disabled=pending;
+  shuffle.title=repeat.title=pending?'La selección mantiene su orden mientras se completa la cola.':'Cambiar modo de reproducción';
+ const repeatState=typeof state.repeat==='number'?['off','context','track'][state.repeat]||'off':state.repeat||'off';
+ const repeatOn=repeatState!=='off',shuffleOn=!!state.shuffle;
  repeat.setAttribute('aria-pressed',String(repeatOn));
  shuffle.setAttribute('aria-pressed',String(shuffleOn));
- repeat.dataset.state=state.repeat||'off';
+ repeat.dataset.state=repeatState;
  repeat.lastChild&&null;
  if(oldId!==state.trackId)updateLyricsLink();
 }
@@ -96,6 +100,7 @@ const c=$('tm-popover-content');
 function showText(message){c.dataset.mode='message';c.replaceChildren(document.createTextNode(message))}
 $('tm-shuffle').onclick=e=>busy(e.currentTarget,async()=>{
  if(!rt.account)throw Error('Conecta Spotify para usar aleatorio.');
+  if(rt.sequencePending){showText('Esta selección mantiene el orden elegido mientras se completa la cola.');return}
  const state=$('tm-shuffle').getAttribute('aria-pressed')!=='true';
  await sp.api('/me/player/shuffle?state='+state,{method:'PUT'});
  $('tm-shuffle').setAttribute('aria-pressed',String(state));
@@ -103,6 +108,7 @@ $('tm-shuffle').onclick=e=>busy(e.currentTarget,async()=>{
 });
 $('tm-repeat').onclick=e=>busy(e.currentTarget,async()=>{
  if(!rt.account)throw Error('Conecta Spotify para usar repetición.');
+  if(rt.sequencePending){showText('Esta selección mantiene el orden elegido mientras se completa la cola.');return}
  const before=$('tm-repeat').dataset.state||'off';
  const next=before==='off'?'context':before==='context'?'track':'off';
  await sp.api('/me/player/repeat?state='+next,{method:'PUT'});
@@ -111,19 +117,30 @@ $('tm-repeat').onclick=e=>busy(e.currentTarget,async()=>{
  showText(next==='off'?'Repetición desactivada.':next==='context'?'Se repite la lista o el álbum.':'Se repite esta canción.');
 });
 $('tm-queue-button').onclick=async()=>{
- c.dataset.mode='queue';c.replaceChildren(document.createTextNode('Consultando cola de Spotify…'));
+ c.dataset.mode='queue';c.replaceChildren(document.createTextNode('Consultando cola…'));
  if(!rt.account){showText('Conecta Spotify para consultar tu cola.');return}
  try{
+  let tracks=rt.queue||[];
+  if(!tracks.length){
    const data=await sp.api('/me/player/queue');
-   if(c.dataset.mode!=='queue')return;
-   c.replaceChildren();
-   for(const [i,t] of (data.queue||[]).slice(0,18).entries()){
-     const row=document.createElement('div');row.className='tm-queue-row';
-     const name=document.createElement('span');name.textContent=(i+1)+'. '+(t.name||'Sin título');
-     const by=document.createElement('small');by.textContent=(t.artists||[]).map(x=>x.name).join(', ');
-     row.append(name,by);c.append(row);
-   }
-   if(!c.childElementCount)showText('La cola no tiene canciones disponibles.');
+   tracks=(data.queue||[]).filter(t=>t?.type==='track'&&t?.uri);
+  }
+  if(c.dataset.mode!=='queue')return;
+  c.replaceChildren();
+  for(const [index,t] of tracks.entries()){
+   const row=document.createElement('button');row.className='tm-queue-row';row.type='button';
+   row.style.cssText='display:block;width:100%;text-align:left;background:transparent;color:inherit;border-width:0 0 1px;cursor:pointer';
+   row.setAttribute('aria-label','Reproducir '+t.name);
+   const name=document.createElement('span');name.textContent=(index+1)+'. '+(t.name||'Sin título');
+   const by=document.createElement('small');by.textContent=(t.artists||[]).map(x=>x.name).join(', ');
+   row.append(name,by);
+   row.onclick=async()=>{
+    rt.player?.activateElement?.();row.disabled=true;
+    try{if(await rt.playSequence(tracks,index))openPopup(false)}finally{row.disabled=false}
+   };
+   c.append(row);
+  }
+  if(!c.childElementCount)showText('La cola no tiene canciones disponibles.');
  }catch(err){showText(err.message)}
 };
 $('tm-devices-button').onclick=async()=>{

@@ -14,9 +14,10 @@ function expand(){
  if(field.value.trim().length>=2)results.hidden=false;
 }
 function collapse(){
- open=false;host.classList.remove('tm-search-open');host.setAttribute('aria-expanded','false');results.hidden=true;
+ open=false;request++;clearTimeout(debounce);host.classList.remove('tm-search-open');host.setAttribute('aria-expanded','false');results.hidden=true;
 }
 async function lookup(query){
+ if(!open)return;
  const current=++request;
  results.replaceChildren();
  results.hidden=false;
@@ -28,17 +29,17 @@ async function lookup(query){
  try{
    const endpoint='/search?'+new URLSearchParams({q:query,type:'track',limit:12});
    const data=await sp.api(endpoint);
-   if(current!==request||field.value.trim()!==query)return;
+   if(!open||current!==request||field.value.trim()!==query)return;
    results.replaceChildren();
    const tracks=(data?.tracks?.items||[]).filter(t=>t?.id&&t?.type==='track');
-   for(const t of tracks){
+   for(const [index,t] of tracks.entries()){
      const button=make('button','tm-search-result');button.type='button';
      const cover=make('span','tm-search-cover'),art=img(t.album?.images?.[0]?.url);
      if(art)cover.style.backgroundImage='url("'+art+'")';
      const label=make('span','tm-search-copy'),title=make('strong','',t.name||'');
      label.append(title,make('small','',(t.artists||[]).map(a=>a.name).join(', ')));
      button.append(cover,label,make('span','tm-search-play','▶'));
-     button.onclick=()=>{collapse();void rt.playTrack(t)};
+     button.onclick=()=>{collapse();rt.player?.activateElement?.();void rt.playSequence(tracks,index)};
      results.append(button);
    }
    if(!tracks.length)results.append(make('p','tm-search-message','Sin resultados.'));
@@ -61,7 +62,7 @@ field.addEventListener('input',()=>{
 document.addEventListener('pointerdown',e=>{if(!host.contains(e.target))collapse()});
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&open){collapse();field.blur()}
- if(e.key==='/'&&document.activeElement!==field&&!e.ctrlKey&&!e.metaKey){e.preventDefault();expand()}
+ if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.target?.closest?.('input, textarea, [contenteditable="true"]')){e.preventDefault();expand()}
 });
 window.TransmissionSearch={focus:expand,close:collapse};
 })();
