@@ -39,6 +39,52 @@ window.addEventListener('tm:playback',e=>{
  show()
 });
 toggle.onclick=()=>{if($('tm-play'))$('tm-play').click()};
+const prev=$('tm-mini-prev'),next=$('tm-mini-next');
+prev.onclick=()=>$('tm-prev')?.click();
+next.onclick=()=>$('tm-next')?.click();
+const queuePanel=$('tm-mini-queue-panel'),queueContainer=$('tm-mini-queue-tracks');
+function updateQueue(){
+ const tracks=rt.queue||[],current=actualTrack?.id;
+ queueContainer.replaceChildren();
+ if(!tracks.length){
+   const hint=document.createElement('p');hint.textContent='No hay una secuencia iniciada desde esta página.';
+   queueContainer.append(hint);return
+ }
+ for(let i=0;i<tracks.length;i++){
+   const t=tracks[i],button=document.createElement('button');
+   button.type='button';button.className='tm-mini-queue-item';
+   if(t.id===current)button.classList.add('is-current');
+   const index=document.createElement('span');index.className='tm-mini-queue-index';index.textContent=String(i+1).padStart(2,'0');
+   const name=document.createElement('span');name.className='tm-mini-queue-name';
+   const ttl=document.createElement('strong');ttl.textContent=t.name||'';
+   const artist=document.createElement('small');artist.textContent=(t.artists||[]).map(a=>a.name).join(', ');
+   name.append(ttl,artist);button.append(index,name);
+   button.onclick=async()=>{
+     $('tm-mini-queue').disabled=true;
+     try{
+       if(await rt.playSequence(tracks.slice(i)))queuePanel.hidden=true;
+     }finally{$('tm-mini-queue').disabled=false}
+   };
+   queueContainer.append(button);
+ }
+}
+$('tm-mini-queue').onclick=()=>{
+ queuePanel.hidden=!queuePanel.hidden;
+ if(!queuePanel.hidden)updateQueue()
+};
+$('tm-mini-queue-close').onclick=()=>{queuePanel.hidden=true};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')queuePanel.hidden=true});
+$('tm-mini-share').onclick=async()=>{
+ if(!/^[A-Za-z0-9]{22}$/.test(actualTrack?.id||''))return;
+ const url='https://open.spotify.com/track/'+actualTrack.id;
+ try{
+   if(navigator.share)await navigator.share({title:actualTrack.name,url});
+   else await navigator.clipboard.writeText(url);
+   $('tm-mini-share').title='Enlace copiado';
+ }catch(e){
+   if(e.name!=='AbortError')rt.status('No se pudo compartir la canción: '+e.message,true)
+ }
+};
 function changeVolume(value){
  if(!mainVolume)return;
  mainVolume.value=value;
