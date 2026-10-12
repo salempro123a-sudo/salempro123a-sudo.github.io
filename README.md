@@ -129,3 +129,11 @@ El despliegue público y el audio real necesitan comprobación desde una sesión
 - Se corrigen respuestas tardías al cambiar de playlist y al cerrar la búsqueda. Las pruebas sintéticas cubren107 favoritas, orden global, búsqueda, cola, selección de artista y esos cambios rápidos.
 - Se revisó la página en Chromium a tamaños de escritorio y móvil. La reproducción de audio con una cuenta Premium real sigue pendiente. `featured.json` sigue pendiente de autorización: la portada pública no debe fingir disponer del catálogo privado del propietario.
 - Al revisar la web publicada, la sesión guardada recibió 429 en la consulta del perfil. Ahora ese fallo carga la portada pública y deja la interfaz lista, sin borrar la autorización ni repetir el login. Esta recuperación también se probó con y sin catálogo público; pasan 8 grupos de regresiones.
+
+## Conexión autorizada y cuota de Spotify
+
+- Se comprobó el recorrido real del botón: el callback cargó correctamente y el intercambio OAuth devolvió 200; después `GET /me` devolvió 429 con `reason: QUOTA_EXCEEDED` y `Retry-After: 67091`. La cuenta autorizó la aplicación, pero la cuota del servicio impidió cargar el perfil. No se considera una prueba de reproducción Premium.
+- La cabecera muestra «SPOTIFY EN ESPERA» y el reproductor ofrece «REINTENTAR» con la fecha indicada por Spotify. Pulsarlo durante ese plazo explica el bloqueo y evita repetir OAuth. Cuando vence, permite recuperar la conexión con la autorización existente. El enlace de desconexión se identifica correctamente incluso sin perfil.
+- El cliente respeta `Retry-After` y conserva el periodo de espera al recargar. No envía más llamadas a la Web API mientras está vigente. Distingue cuota agotada de un límite de solicitudes, y una respuesta temporal al renovar el token conserva la sesión; `invalid_grant` sigue exigiendo una autorización nueva.
+- El corazón del reproductor principal se centra verticalmente en la información de la canción.
+- Pruebas: los 8 grupos anteriores, incluidos los clics de conexión bloqueada, y 5 comprobaciones del cliente de autorización pasan. Se cubren espera persistente, vencimiento, 429 sin JSON, renovación temporalmente fallida y refresh token inválido. El servidor de Spotify determina cuándo vuelve a admitir el acceso; ningún cambio de esta web levanta esa cuota.

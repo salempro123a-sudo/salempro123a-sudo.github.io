@@ -84,6 +84,7 @@
 .tm-mini-copy{flex:0 1 140px!important;max-width:170px;min-width:65px!important}
 .tm-mini-copy strong{font:700 15px/17px var(--display)!important}
 .tm-mini-copy small{font:500 12px/14px var(--display)!important}
+.tm-player-copy .tm-favorite-button{top:50%;transform:translateY(-50%)}
 #tm-mini-toggle{height:58px!important;width:44px!important;min-width:44px!important;flex:0 0 44px!important;border-right:0!important;background:transparent!important}
 #tm-mini-toggle:hover{background:#ededed!important}
 .tm-mini-time{font:12px/14px Arial,sans-serif;color:#4c4c4c}

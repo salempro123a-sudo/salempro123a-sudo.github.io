@@ -9,6 +9,7 @@ const list={tracks:[],playlists:[],recent:[],liked:[],shared:null},owner=sp.CONF
 let account=null,player=null,device=null,deviceSelected=false,hero=0,featured=null;
 let selected=null,lastPlayerState=null,poll=null,sdkPromise=null,lastOnAirId=null;
 let lastPlayback=null,publicSnapshot=null,ownerTracks=[],ownerSaved=[],ownerArtists=[],manualUntil=0,station=null,ready=false;
+let connectionError=null;
 let recentEvents=[],likedVisible=12,likedTotal=0,likedLoadMore=false,likedLoading=false;
 const safeArt=u=>typeof u==='string'&&/^https:\/\/(i\.scdn\.co|mosaic\.scdn\.co|image-cdn-ak\.spotifycdn\.com|seeded-session-images\.scdn\.co)\//.test(u)?u:'';
 const title=t=>t?.name||'';
@@ -26,7 +27,15 @@ function status(message,error=false){
   if(el){el.hidden=true;el.textContent='';el.setAttribute('aria-hidden','true')}
   if(error)console.warn('TRANSMISSION:',entry.message);
 }
-function banner(message){status(message);const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3200)}
+function banner(message,duration=3200){status(message);const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),duration)}
+function connectionMessage(){
+  const block=sp.cooldown||connectionError;
+  if(block?.status===429||block?.retryAt){
+    const when=block.retryAt?new Date(block.retryAt).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'más tarde';
+    return 'Tu cuenta ya está autorizada. Spotify ha limitado temporalmente el acceso de esta aplicación. Puedes reintentar '+when+'.';
+  }
+  return connectionError?.message||'No se pudo completar la conexión. Inténtalo de nuevo.';
+}
 function applyTrackArt(target,t){
   if(!target)return;
   const u=img(t);
@@ -314,8 +323,12 @@ function renderOtherDetails(){
   const likedCount=window.TransmissionTaste?.getTotal?.()??publicSnapshot?.liked?.length??0;
   $('collection-count-3').textContent=likedCount?likedCount+' CANCIONES':'';
   $('owner-display').textContent='';
-  const accountName=$('account-name');if(accountName)accountName.textContent=account?.display_name||'CONECTAR';
-  $('connect-button').textContent=account?'CONECTADO ✓':'CONECTAR';
+  const waiting=!account&&sp.isLogged?.()&&(connectionError?.status===429||!!sp.cooldown);
+  const accountName=$('account-name');if(accountName)accountName.textContent=account?.display_name||(account?'CONECTADO':waiting?'SPOTIFY EN ESPERA':'CONECTAR');
+  $('connect-button').textContent=account?'CONECTADO ✓':waiting?'REINTENTAR':'CONECTAR';
+  $('saved-trigger').title=waiting?connectionMessage():'Conectar Spotify';
+  $('connect-button').title=waiting?connectionMessage():'';
+  $('reconnect-button').textContent=sp.isLogged?.()?'DESCONECTAR SPOTIFY':'CONECTAR SPOTIFY';
 }
 function playFeedback(msg,err=false){status(msg,err)}
 async function sdk(){
@@ -753,10 +766,17 @@ function bind(){
   document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',closeOverlay));
   $('search-overlay').addEventListener('click',e=>{if(e.target===$('search-overlay'))closeOverlay()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlay()});
-  const login=()=>void sp.login().catch(e=>status(e.message,true));
+  const login=()=>void sp.login().catch(e=>{status(e.message,true);banner(e.message,10000)});
   const logout=()=>{sp.logout();location.reload()};
   const openMyPlayer=()=>{
-    if(!account){login();return}
+    if(!account){
+      if(sp.isLogged?.()){
+        const block=sp.cooldown||connectionError;
+        if(block?.retryAt>Date.now()){banner(connectionMessage(),10000);return}
+        location.reload();return;
+      }
+      login();return;
+    }
     $('player').scrollIntoView({behavior:'smooth',block:'center'});
     $('tm-more').focus();
   };
@@ -773,7 +793,7 @@ function bind(){
   $('shared-form').onsubmit=e=>{e.preventDefault();const id=parsePlaylist($('shared-link').value);if(!id){status('Introduce el enlace real de una playlist de Spotify.',true);return}void loadShared(id).catch(err=>status(err.message,true))}
   $('shared-button').onclick=()=>{if(list.shared)void playPlaylist(list.shared)};
   $('shared-share').onclick=()=>void copyLink(location.href);
-  $('reconnect-button').onclick=()=>account?logout():login();
+  $('reconnect-button').onclick=()=>sp.isLogged?.()?logout():login();
   const toggle=$('menu-toggle'),nav=$('main-nav');
   toggle.onclick=()=>{const open=nav.classList.toggle('is-open');toggle.setAttribute('aria-expanded',String(open))};
   nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('is-open')));
@@ -825,6 +845,8 @@ try{
         status('Spotify conectado. Haz clic en una carátula para reproducir aquí.');
       }
     }catch(e){
+      connectionError=e;
+      if(e.status===429&&!e.retryAt)e.retryAt=Date.now()+60000;
       status(e.message,true);
       if(!account){
         // A saved session can be valid while Spotify temporarily rejects /me.
@@ -833,7 +855,9 @@ try{
         await loadPlaylists();
         await loadRecent();
         renderArtistOrbit(publicSnapshot?.artists||[]);
+        renderOtherDetails();
         ready=true;
+        if(e.status===429)banner(connectionMessage(),10000);
         const requested=new URLSearchParams(location.search).get('playlist');
         if(requested&&/^[a-zA-Z0-9]{22}$/.test(requested))await loadShared(requested);
       }

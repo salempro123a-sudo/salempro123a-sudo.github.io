@@ -10,7 +10,31 @@
   });
   const KEY='transmission_spotify_v3';
   const PKCE='transmission_spotify_pkce_v1';
+  const COOLDOWN=KEY+'_cooldown_'+CONFIG.clientId;
   let refreshing=null;
+  function readCooldown(){
+    try{
+      const value=JSON.parse(localStorage.getItem(COOLDOWN)||'null');
+      if(value?.retryAt>Date.now())return value;
+      localStorage.removeItem(COOLDOWN);
+    }catch{}
+    return null;
+  }
+  function retryAt(response){
+    const value=response.headers?.get?.('Retry-After');
+    const seconds=Number(value);
+    if(value&&Number.isFinite(seconds)&&seconds>=0)return Date.now()+Math.max(1,seconds)*1000;
+    const date=value?Date.parse(value):NaN;
+    return Number.isFinite(date)&&date>Date.now()?date:Date.now()+60000;
+  }
+  function quotaError(block){
+    const error=new SpotifyError(429,block.reason==='QUOTA_EXCEEDED'
+      ?'Spotify agotó la cuota temporal de esta aplicación.'
+      :'Spotify limitó temporalmente las solicitudes.');
+    error.reason=block.reason;
+    error.retryAt=block.retryAt;
+    return error;
+  }
   const tokenStore={
     read(){
       try{
@@ -104,7 +128,15 @@
         body:new URLSearchParams({client_id:CONFIG.clientId,grant_type:'refresh_token',refresh_token:saved.refresh})
       });
       const result=await res.json().catch(()=>({}));
-      if(!res.ok){tokenStore.clear();throw new Error('Spotify terminó tu sesión. Conecta de nuevo tu cuenta para continuar.')}
+      if(!res.ok){
+        if(result.error==='invalid_grant'||res.status===401){
+          tokenStore.clear();
+          throw new Error('Spotify terminó tu sesión. Conecta de nuevo tu cuenta para continuar.');
+        }
+        const error=new SpotifyError(res.status,'Spotify no pudo renovar la sesión en este momento. Tu autorización se conserva.');
+        if(res.status===429)error.retryAt=retryAt(res);
+        throw error;
+      }
       return saveToken(result,saved.refresh).access;
     })();
     try{return await refreshing}finally{refreshing=null}
@@ -118,6 +150,8 @@
     constructor(code,message){super(message);this.status=code;this.name='SpotifyError'}
   }
   async function api(path,options={},retry=true){
+    const block=readCooldown();
+    if(block)throw quotaError(block);
     const access=await getToken();
     const target='https://api.spotify.com/v1'+path;
     const headers={'Authorization':'Bearer '+access,...options.headers};
@@ -137,7 +171,7 @@
       if(raw!==null){
         if(raw.trim()){
           try{data=JSON.parse(raw)}
-          catch{throw new SpotifyError(res.status,'Respuesta no válida de Spotify ('+res.status+'). Comprueba la sesión y el acceso en Diagnóstico.')}
+          catch{if(res.ok)throw new SpotifyError(res.status,'Respuesta no válida de Spotify ('+res.status+'). Comprueba la sesión y el acceso en Diagnóstico.')}
         }
       }else{
         try{data=await res.json()}catch{
@@ -147,6 +181,11 @@
     }
     if(!res.ok){
       const reason=data?.error?.reason||data?.error?.message||'';
+      if(res.status===429){
+        const block={reason:data?.error?.reason||'RATE_LIMITED',retryAt:retryAt(res)};
+        try{localStorage.setItem(COOLDOWN,JSON.stringify(block))}catch{}
+        throw quotaError(block);
+      }
       const message=res.status===403?'Spotify no autorizó esta operación. Revisa permisos, acceso de desarrollo o cuota.':
         res.status===429?'Spotify limitó las solicitudes; espera antes de actualizar.':
         'Spotify respondió '+res.status+(reason?': '+String(reason).slice(0,140):'');
@@ -155,5 +194,6 @@
     return data;
   }
   function logout(){tokenStore.clear();sessionStorage.removeItem(PKCE);sessionStorage.removeItem('tm_return_to')}
-  window.TransmissionSpotify={CONFIG,login,processRedirect,getToken,api,logout,isLogged:()=>!!tokenStore.read()?.access};
+  window.TransmissionSpotify={CONFIG,login,processRedirect,getToken,api,logout,isLogged:()=>!!tokenStore.read()?.access,
+    get cooldown(){return readCooldown()}};
 })();
