@@ -69,3 +69,6 @@
 @media(max-width:660px){.header-account #account-name{max-width:70px}.tm-inline-search.tm-search-open{right:75px}.hero-visual .hero-caption{max-width:83%;padding:14px 15px;bottom:76px;min-width:0}.hero-visual .hero-title{font-size:clamp(32px,8vw,50px)}.hero-visual .hero-description{font-size:14px}.tm-mini-player{gap:6px!important;padding:4px 7px!important}.tm-mini-cover{width:40px!important;height:40px!important;flex-basis:40px!important}.tm-mini-copy{flex-basis:88px!important}.tm-mini-copy strong{font-size:15px!important}.tm-mini-copy small{font-size:11px!important}.tm-mini-volume{display:none!important}#tm-mini-toggle{flex-basis:32px!important;width:32px!important;min-width:32px!important}#tm-mini-favorite{width:26px;font-size:23px}.tm-mini-time{font-size:11px}}
 @media(max-width:430px){.tm-mini-copy{display:none!important}.tm-inline-search.tm-search-open{right:60px}.hero-visual .hero-caption{max-width:87%}}
 @media(prefers-reduced-motion:reduce){.hero-visual .hero-caption,.record-art,.record-image:before,.rail-item-cover{transition:none!important}}
+
+body:has(.tm-mini-player:not([hidden])){padding-bottom:64px}
+.hero-kicker:empty{display:none!important}
