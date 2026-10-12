@@ -738,6 +738,7 @@ window.TransmissionRuntime={
   get player(){return player},
   get device(){return device},
   get currentTrack(){return selected||featured},
+  get queue(){return station?.tracks?[...station.tracks]:[]},
   get featured(){return featured},
   get state(){return lastPlayback},
   get owner(){return owner},
