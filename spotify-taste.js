@@ -125,17 +125,24 @@ function closeLikedAll(){
  modalFocus?.focus?.();
 }
 function fillPlaylistRail(){
- if(!rt||rt.playlists?.length)return;
+ if(!rt)return;
  const source=unique(liked.length?liked:(rt.ownerTracks?.length?rt.ownerTracks:rt.publicSnapshot?.tracks||[]));
  if(!source.length)return;
  const rail=el('mixtapes'),anchor=el('rail-all');
  if(!rail||!anchor)return;
- rail.querySelectorAll('.rail-item').forEach(x=>x.remove());
- const heading=rail.querySelector('.rail-heading');
- if(heading)heading.textContent='FAVORITAS';
- for(const track of source.slice(0,4)){
-   const button=create('button','rail-item');
-   button.type='button';button.title=track.name;
+ const playlists=(rt.playlists||[]).length;
+ // When no playlists were available, remove only decorative placeholders.
+ if(!playlists)rail.querySelectorAll('.rail-item').forEach(node=>node.remove());
+ const previous=rail.querySelectorAll('.tm-rail-favorite').length;
+ if(previous)rail.querySelectorAll('.tm-rail-favorite').forEach(node=>node.remove());
+ const remaining=Math.max(0,6-Math.min(playlists,6));
+ if(!playlists){
+   const heading=rail.querySelector('.rail-heading');
+   if(heading)heading.textContent='ESCUCHAR';
+ }
+ for(const track of source.slice(0,remaining)){
+   const button=create('button','rail-item tm-rail-favorite');
+   button.type='button';button.title='Escuchar '+track.name;
    const cover=create('span','rail-item-cover tm-rail-image');
    if(image(track))cover.style.backgroundImage='url("'+image(track)+'")';
    const label=create('span','rail-item-label');
