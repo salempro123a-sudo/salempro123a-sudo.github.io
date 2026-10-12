@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 const rt=window.TransmissionRuntime;
+const sp=window.TransmissionSpotify;
 if(!rt)return;
 const $=id=>document.getElementById(id);
 const mini=$('tm-mini-player'),primary=$('player'),toggle=$('tm-mini-toggle');
@@ -43,9 +44,16 @@ const prev=$('tm-mini-prev'),next=$('tm-mini-next');
 prev.onclick=()=>$('tm-prev')?.click();
 next.onclick=()=>$('tm-next')?.click();
 const queuePanel=$('tm-mini-queue-panel'),queueContainer=$('tm-mini-queue-tracks');
-function updateQueue(){
- const tracks=rt.queue||[],current=actualTrack?.id;
+async function updateQueue(){
+ let tracks=rt.queue||[];
  queueContainer.replaceChildren();
+ if(!tracks.length&&rt.account&&sp){
+   try{
+     const response=await sp.api('/me/player/queue');
+     tracks=(response?.queue||[]).filter(t=>t?.type==='track'&&t?.uri).slice(0,30)
+   }catch(e){rt.status('Cola de Spotify: '+e.message,true)}
+ }
+ const current=actualTrack?.id;
  if(!tracks.length){
    const hint=document.createElement('p');hint.textContent='No hay una secuencia iniciada desde esta página.';
    queueContainer.append(hint);return
@@ -70,7 +78,7 @@ function updateQueue(){
 }
 $('tm-mini-queue').onclick=()=>{
  queuePanel.hidden=!queuePanel.hidden;
- if(!queuePanel.hidden)updateQueue()
+ if(!queuePanel.hidden)void updateQueue()
 };
 $('tm-mini-queue-close').onclick=()=>{queuePanel.hidden=true};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')queuePanel.hidden=true});
