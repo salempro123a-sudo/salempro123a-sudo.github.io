@@ -53,14 +53,14 @@
 .tm-ticker-copy{display:inline-flex;flex:none;padding:0 15px}
 .tm-ticker-star{display:inline-flex;flex:none;justify-content:center;align-items:center;margin:0 10px;font-weight:650;font-size:.96em;animation:tm-star-wheel 12s linear infinite!important;transform-origin:50% 50%}
 .crosshair{display:block!important;animation:tm-star-wheel 15s linear infinite!important;transform-origin:50% 50%}
-.heading-indicator:not(:empty){display:inline-block;animation:tm-star-wheel 15s linear infinite!important;transform-origin:center}
+.heading-indicator.tm-spin-symbol{display:inline-block;animation:tm-star-wheel 15s linear infinite!important;transform-origin:center}
 @media(prefers-reduced-motion:reduce){
  /* The page owner's explicit motion preference wins over an inferred OS setting
     for the ticker and two rotating symbols only. Everything else remains reduced. */
  .marquee-band .marquee-inner{animation:tm-ticker-loop 29s linear infinite!important}
  .marquee-band .tm-ticker-star{animation:tm-star-wheel 12s linear infinite!important}
  .crosshair{animation:tm-star-wheel 15s linear infinite!important}
- .heading-indicator:not(:empty){animation:tm-star-wheel 15s linear infinite!important}
+ .heading-indicator.tm-spin-symbol{animation:tm-star-wheel 15s linear infinite!important}
 }
 
 /* Saved songs: current position, arrows, full-library browser. */
