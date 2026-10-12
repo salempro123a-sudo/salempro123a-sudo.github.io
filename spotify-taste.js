@@ -475,9 +475,22 @@ el('tm-liked-close').onclick=closeLikedAll;
 el('tm-liked-modal').addEventListener('click',e=>{if(e.target===el('tm-liked-modal'))closeLikedAll()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen)closeLikedAll()});
 el('tm-liked-search').addEventListener('input',renderLikedAll);
-el('tm-liked-sort').onchange=()=>{
- likedOrder=el('tm-liked-sort').value;page=0;render();
-};
+async function changeLikedOrder(value){
+ likedOrder=value;page=0;
+ el('tm-liked-sort').value=value;
+ el('tm-liked-sort-inline').value=value;
+ render();
+ if(ownerConnected&&canFetchMore&&value!=='new'){
+   let pages=0;
+   while(canFetchMore&&pages<12){
+     if(!await fetchLikedBatch())break;
+     pages++;
+   }
+ }
+ render();
+}
+el('tm-liked-sort').onchange=()=>void changeLikedOrder(el('tm-liked-sort').value);
+el('tm-liked-sort-inline').onchange=()=>void changeLikedOrder(el('tm-liked-sort-inline').value);
 el('tm-liked-load').onclick=()=>void fetchLikedBatch();
 
 document.addEventListener('tm:library-changed',event=>{
