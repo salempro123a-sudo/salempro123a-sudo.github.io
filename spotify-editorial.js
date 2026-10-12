@@ -323,7 +323,7 @@ async function sdk(){
     });
   }
   await sdkPromise;
-  const p=new Spotify.Player({name:'TRANSMISSION / WEB',getOAuthToken:async fn=>{
+  const p=new Spotify.Player({name:'TRANSMISSION',getOAuthToken:async fn=>{
     try{fn(await sp.getToken())}catch(e){status(e.message,true)}
   },volume:.7});
   p.addListener('ready',({device_id})=>{device=device_id;status('Reproductor listo. Puedes escuchar dentro de esta página.');$('player-device').textContent='WEB PLAYER / LISTO'});
