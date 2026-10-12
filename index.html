@@ -156,7 +156,7 @@
       <a class="support-link" href="#support">COMPARTIR <span aria-hidden="true">↗</span></a>
     </nav>
     <div class="header-tools">
-      <div class="tm-inline-search" id="tm-inline-search"><button class="header-search icon-button" id="search-trigger" aria-label="Buscar canciones" title="Buscar canciones"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg></button><input id="tm-inline-query" type="search" aria-label="Buscar música" autocomplete="off" placeholder="BUSCAR MÚSICA"><div id="tm-inline-results" class="tm-inline-results" hidden role="region" aria-label="Resultados de búsqueda"></div></div>
+      <div class="tm-inline-search" id="tm-inline-search"><button class="header-search icon-button" id="search-trigger" aria-label="Buscar canciones" title="Buscar canciones"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg></button><input id="tm-inline-query" type="search" aria-label="Buscar música" autocomplete="off" placeholder=""><div id="tm-inline-results" class="tm-inline-results" hidden role="region" aria-label="Resultados de búsqueda"></div></div>
       <span class="tool-divider"></span>
       <button class="header-account" id="saved-trigger" title="Conectar o desconectar Spotify"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4z"/></svg> <span id="account-name">CONECTAR</span></button>
     </div>
@@ -277,8 +277,16 @@
 
     <section class="catalog-section tm-liked-section" id="liked" aria-label="Canciones guardadas">
   <div class="section-heading">
-    <div><span class="eyebrow" id="liked-kicker" hidden></span><h2>ME GUSTA <span class="heading-indicator">↗</span></h2></div>
-    <div class="tm-liked-actions"><button class="view-all" id="tm-liked-play" type="button" disabled>▶ ESCUCHAR</button><div class="tm-liked-pager" id="tm-liked-pager" aria-label="Navegación de favoritas"><button id="tm-liked-prev" type="button" aria-label="Canciones anteriores" disabled>←</button><button id="tm-liked-more" type="button" aria-label="Canciones siguientes" disabled>→</button></div></div>
+    <div><span class="eyebrow" id="liked-kicker" hidden></span><h2>ME GUSTA</h2></div>
+    <div class="tm-liked-actions">
+  <button class="view-all" id="tm-liked-play" type="button" disabled>▶ ESCUCHAR</button>
+  <div class="tm-liked-pager" id="tm-liked-pager" aria-label="Navegar canciones guardadas">
+    <span id="tm-liked-position" class="tm-liked-position" aria-live="polite"></span>
+    <button id="tm-liked-prev" type="button" aria-label="Página anterior" disabled>←</button>
+    <button id="tm-liked-more" type="button" aria-label="Página siguiente" disabled>→</button>
+  </div>
+  <button id="tm-liked-all" class="tm-liked-all" type="button">VER TODAS</button>
+</div>
   </div>
   <div class="tm-liked-grid" id="tm-liked-grid" aria-live="polite"></div>
 </section>
@@ -300,7 +308,7 @@
   </div>
 </section>
 
-    <section class="marquee-band" aria-label="Identidad visual"><div class="marquee-inner" aria-hidden="true">MY FREQUENCY&nbsp; ✳ &nbsp;MUSIC THAT STAYS&nbsp; ✳ &nbsp;NO FIXED GENRE&nbsp; ✳ &nbsp;MY FREQUENCY&nbsp; ✳ &nbsp;MUSIC THAT STAYS&nbsp; ✳ &nbsp;NO FIXED GENRE&nbsp; ✳ &nbsp;</div></section>
+    <section class="marquee-band" aria-label="Identidad visual"><div class="marquee-inner" aria-hidden="true"><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span></div></section>
 
     <section class="studio-block" id="recent">
   <div class="studio-image tm-recent-panel">
@@ -393,20 +401,33 @@
    <div class="tm-library-bottom" id="tm-library-bottom"><button id="tm-library-more" type="button" hidden>CARGAR MÁS ↗</button><p id="tm-library-feedback" role="status"></p></div>
  </div>
 </div>
-  <div id="tm-artist-modal" class="tm-artist-modal" hidden>
+  <div class="tm-liked-modal" id="tm-liked-modal" hidden>
+ <div class="tm-liked-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-liked-dialog-title">
+  <header class="tm-liked-dialog-head"><h2 id="tm-liked-dialog-title">ME GUSTA</h2><button id="tm-liked-close" aria-label="Cerrar favoritas" type="button">✕</button></header>
+  <div class="tm-liked-toolbar"><label class="tm-liked-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg><input id="tm-liked-search" type="search" aria-label="Buscar en canciones guardadas" placeholder="" autocomplete="off"></label><select id="tm-liked-sort" aria-label="Orden de canciones guardadas"><option value="new">RECIENTES</option><option value="old">ANTIGUAS</option><option value="az">A–Z</option><option value="artist">ARTISTA</option></select><span id="tm-liked-total"></span></div>
+  <div id="tm-liked-all-grid" class="tm-liked-all-grid"></div>
+  <button type="button" id="tm-liked-load" class="tm-liked-load" hidden>CARGAR MÁS</button>
+ </div>
+</div>
+<div id="tm-artist-modal" class="tm-artist-modal" hidden>
  <div class="tm-artist-body" role="dialog" aria-modal="true" aria-labelledby="tm-artist-title">
   <div class="tm-artist-top"><h2 id="tm-artist-title"></h2><button id="tm-artist-close" type="button" aria-label="Cerrar artista">✕</button></div>
   <div id="tm-artist-songs" class="tm-artist-songs"></div>
   <a id="tm-artist-external" target="_blank" rel="noopener noreferrer">VER EN SPOTIFY ↗</a>
  </div>
 </div>
+<div id="tm-mini-queue-panel" class="tm-mini-queue-panel" hidden aria-label="Cola actual"><div class="tm-mini-queue-top"><strong>COLA</strong><button type="button" id="tm-mini-queue-close" aria-label="Cerrar cola">✕</button></div><div id="tm-mini-queue-tracks" class="tm-mini-queue-tracks"></div></div>
 <div id="tm-mini-player" class="tm-mini-player" hidden aria-label="Reproductor compacto">
  <div id="tm-mini-cover" class="tm-mini-cover"></div>
  <div class="tm-mini-copy"><strong id="tm-mini-title"></strong><small id="tm-mini-artist"></small></div>
+ <button id="tm-mini-prev" type="button" aria-label="Anterior canción" title="Anterior">‹</button>
  <button id="tm-mini-toggle" type="button" aria-label="Pausar o reanudar">▶</button>
+ <button id="tm-mini-next" type="button" aria-label="Siguiente canción" title="Siguiente">›</button>
  <span id="tm-mini-elapsed" class="tm-mini-time">0:00</span>
  <input id="tm-mini-seek" type="range" min="0" max="1000" value="0" aria-label="Avanzar canción" disabled>
  <span id="tm-mini-duration" class="tm-mini-time">0:00</span>
+ <button id="tm-mini-queue" type="button" aria-label="Ver cola de reproducción" title="Cola">≡</button>
+ <button id="tm-mini-share" type="button" aria-label="Compartir canción" title="Compartir"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 12h10m-4-4 4 4-4 4M5 5v14"/></svg></button>
  <button id="tm-mini-favorite" type="button" aria-label="Guardar en Me gusta" title="Me gusta" disabled>♡</button>
  <label class="tm-mini-volume" aria-label="Volumen"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" stroke="currentColor" fill="none" stroke-width="1.5"/></svg><input id="tm-mini-volume" type="range" min="0" max="100" value="70" aria-label="Volumen del reproductor"></label>
 </div>
