@@ -537,16 +537,18 @@ function noteOwnerPlay(t){
   window.dispatchEvent(new CustomEvent('tm:owner-track',{detail:{track:t}}));
 }
 function renderHighlighted(t){
-  if(!t?.id)return;
-  if(Date.now()<manualUntil)return;
-  if(lastOnAirId===t.id && featured?.id===t.id)return;
-  lastOnAirId=t.id;
-  featured={...t,uri:t.uri||'spotify:track:'+t.id};
-  $('hero-kicker').textContent='ESCUCHANDO AHORA';
-  $('hero-title').textContent=title(t);
-  $('hero-description').textContent=artist(t);
-  applyTrackArt($('hero-image'),t);
-  $('hero-play').disabled=false;
+ if(!t?.id||Date.now()<manualUntil)return;
+ if(lastOnAirId===t.id && featured?.id===t.id)return;
+ lastOnAirId=t.id;
+ const current={...t,uri:t.uri||'spotify:track:'+t.id};
+ // The highlighted song is a real carousel item so the restored n/N counter is accurate.
+ list.tracks=list.tracks.filter(item=>item.id!==t.id);
+ list.tracks.unshift(current);
+ if(list.tracks.length>24)list.tracks.length=24;
+ renderHero(0);
+ renderTiles(list.tracks);
+ $('hero-kicker').textContent='ESCUCHANDO AHORA';
+ renderOtherDetails();
 }
 function renderArtistOrbit(items){
   const wrap=$('taste-artists'),line=$('taste-artist-names');
