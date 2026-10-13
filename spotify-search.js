@@ -27,7 +27,7 @@ async function lookup(query){
  }
  const wait=make('p','tm-search-message','BUSCANDO…');results.append(wait);
  try{
-   const endpoint='/search?'+new URLSearchParams({q:query,type:'track',limit:12});
+   const endpoint='/search?'+new URLSearchParams({q:query,type:'track',limit:10});
    const data=await sp.api(endpoint);
    if(!open||current!==request||field.value.trim()!==query)return;
    results.replaceChildren();
