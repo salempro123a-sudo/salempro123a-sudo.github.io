@@ -23,6 +23,8 @@ function refresh(){
  $('tm-up-next').setAttribute('aria-label',next?'Siguiente: '+next.name:'Escuchar mi rotación');
  $('tm-up-next').title=next?'Reproducir la siguiente canción':'Escuchar mi rotación';
  const track=rt.currentTrack;
+ const current=rt.state?.trackId;
+ $('hero-kicker').textContent=current&&rt.featured?.id===current?(rt.state.playing?'ESCUCHANDO AHORA':'EN PAUSA'):'';
  $('tm-open-spotify').href=track?.id?'https://open.spotify.com/track/'+track.id:'https://open.spotify.com/';
  collage('tm-collection-art-1',rt.account?rt.accountTracks:rt.publicSnapshot?.tracks);
  collage('tm-collection-art-2',rt.playlists);
