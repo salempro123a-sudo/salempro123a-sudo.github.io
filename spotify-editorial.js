@@ -794,8 +794,7 @@ window.TransmissionRuntime={
   get featured(){return featured},
   get state(){return lastPlayback},
   get upcomingTrack(){
-    const index=station?.tracks.findIndex(t=>t.id===lastPlayback?.trackId)??-1;
-    return index>=0?station.tracks[index+1]||null:lastPlayerState?.track_window?.next_tracks?.[0]||null;
+    return station?station.tracks[station.index+1]||null:lastPlayerState?.track_window?.next_tracks?.[0]||null;
   },
   get owner(){return owner},
   get publicSnapshot(){return publicSnapshot},

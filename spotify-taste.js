@@ -146,7 +146,7 @@ function closeLikedAll(){
 }
 function fillPlaylistRail(){
  if(!rt)return;
- const source=unique(liked.length?liked:(rt.accountTracks?.length?rt.accountTracks:rt.publicSnapshot?.tracks||[]));
+ const source=unique(liked.length?liked:(rt.account?rt.accountTracks:rt.publicSnapshot?.tracks||[]));
  if(!source.length)return;
  const rail=el('mixtapes'),anchor=el('rail-all');
  if(!rail||!anchor)return;
@@ -155,7 +155,7 @@ function fillPlaylistRail(){
  if(!playlists)rail.querySelectorAll('.rail-item').forEach(node=>node.remove());
  const previous=rail.querySelectorAll('.tm-rail-favorite').length;
  if(previous)rail.querySelectorAll('.tm-rail-favorite').forEach(node=>node.remove());
- const remaining=Math.max(0,6-Math.min(playlists,6));
+ const remaining=Math.max(0,7-Math.min(playlists,7));
  if(!playlists){
    const heading=rail.querySelector('.rail-heading');
    if(heading)heading.textContent='ESCUCHAR';
@@ -171,7 +171,7 @@ function fillPlaylistRail(){
    button.onclick=()=>void rt.playTrack(track);
    rail.insertBefore(button,anchor);
  }
- rail.style.setProperty('--tm-rail-rows',String(Math.max(1,Math.ceil(rail.querySelectorAll('.rail-item').length/2))));
+ window.TransmissionUI?.refresh?.();
 }
 
 async function loadFirst(){
@@ -190,20 +190,6 @@ async function loadFirst(){
  render();
  rt?.fillEmptyHome?.(liked);
  fillPlaylistRail();
- const holder=el('recent-items');
- if(accountConnected && liked.length && holder && !holder.querySelector('button')){
-   // Another section can fall back to saved songs, without inventing play history.
-   el('recent-label').textContent='DEL ARCHIVO';
-   holder.replaceChildren();
-   for(const track of liked.slice(0,5)){
-     const btn=create('button','tm-recent-item');
-     const cover=create('span','tm-recent-cover');if(image(track))cover.style.backgroundImage='url("'+image(track)+'")';
-     const by=create('span','tm-recent-desc');
-     by.append(create('strong','',track.name),create('small','',artists(track)));
-     btn.append(cover,by,create('span','tm-recent-arrow','▶'));
-     btn.onclick=()=>void rt.playTrack(asTrack(track));holder.append(btn);
-   }
- }
 }
 async function loadNext(){
  if(loading)return;

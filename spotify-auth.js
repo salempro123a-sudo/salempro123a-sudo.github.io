@@ -188,7 +188,12 @@
       if(raw!==null){
         if(raw.trim()){
           try{data=JSON.parse(raw)}
-          catch{if(res.ok)throw new SpotifyError(res.status,'Respuesta no válida de Spotify ('+res.status+'). Comprueba la sesión y el acceso en Diagnóstico.')}
+          catch{
+            const acknowledgement=String(options.method||'GET').toUpperCase()!=='GET'&&
+              String(options.method||'GET').toUpperCase()!=='HEAD'&&
+              /^[A-Za-z0-9_=-]{1,128}$/.test(raw.trim());
+            if(res.ok&&!acknowledgement)throw new SpotifyError(res.status,'Respuesta no válida de Spotify ('+res.status+'). Comprueba la sesión y el acceso en Diagnóstico.');
+          }
         }
       }else{
         try{data=await res.json()}catch{
