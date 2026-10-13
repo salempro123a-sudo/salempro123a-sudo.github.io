@@ -3,10 +3,9 @@
 'use strict';
 const rt=window.TransmissionRuntime;
 if(!rt)return;
-const owner=rt.owner;
 let recentArtists=[];
 function updateArtists(track){
- if(rt.account?.id!==owner||!track)return;
+ if(!rt.account||!track)return;
  const nodes=[];
  const known=new Set();
  const add=name=>{
@@ -15,7 +14,7 @@ function updateArtists(track){
  };
  (track.artists||[]).forEach(a=>add(a.name));
  for(const a of recentArtists)add(a);
- for(const a of rt.ownerArtists||[])add(a.name);
+ for(const a of rt.accountArtists||[])add(a.name);
  recentArtists=nodes.slice(0,12);
  const container=document.getElementById('taste-artist-names');
  const block=document.getElementById('taste-artists');
@@ -28,7 +27,7 @@ function updateArtists(track){
  }));
  block.hidden=!container.childElementCount;
 }
-window.addEventListener('tm:owner-track',event=>updateArtists(event.detail?.track));
+window.addEventListener('tm:account-track',event=>updateArtists(event.detail?.track));
 window.addEventListener('tm:playback',event=>{
  const p=event.detail||{};
  const playing=!!p.playing;
@@ -40,6 +39,6 @@ window.addEventListener('tm:playback',event=>{
    if(dot)live.append(dot);
  }
  const heroStatus=document.querySelector('.hero-topline .hero-onair');
- if(heroStatus)heroStatus.hidden=!(playing&&rt.account?.id===owner);
+ if(heroStatus)heroStatus.hidden=!(playing&&!!rt.account);
 });
 })();

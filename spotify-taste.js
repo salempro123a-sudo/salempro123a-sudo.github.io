@@ -6,7 +6,6 @@
 const sp=window.TransmissionSpotify;
 const el=id=>document.getElementById(id);
 if(!sp||!el('tm-liked-grid'))return;
-const owner=sp.CONFIG.ownerId;
 const art=u=>typeof u==='string'&&/^https:\/\/(i\.scdn\.co|mosaic\.scdn\.co|image-cdn-ak\.spotifycdn\.com|seeded-session-images\.scdn\.co)\//.test(u)?u:'';
 const image=t=>art(t?.album?.images?.[0]?.url||t?.image);
 const artists=t=>(t?.artists||[]).map(a=>a.name).filter(Boolean).join(', ')||t?.artist||'';
@@ -23,8 +22,8 @@ const unique=items=>{
  return out;
 };
 let liked=[],likesTotal=0,canFetchMore=false,page=0,loading=false,likedOffset=0,likedOrder='new',modalOpen=false,modalFocus=null,likedRequest=null;
-const pageSize=()=>window.matchMedia?.('(max-width:540px)').matches?2:window.matchMedia?.('(max-width:700px)').matches?3:6;
-let recentEvents=[],ownerTop=[],rt=null,ownerConnected=false,accountReady=false;
+const pageSize=()=>window.matchMedia?.('(max-width:540px)').matches?2:window.matchMedia?.('(max-width:767px)').matches?3:6;
+let recentEvents=[],accountTop=[],rt=null,accountConnected=false,accountReady=false;
 const likedGrid=el('tm-liked-grid'),more=el('tm-liked-more'),play=el('tm-liked-play'),label=el('liked-kicker');
 function status(message,error=false){rt?.status(message,error)}
 function sortedLiked(){
@@ -41,7 +40,9 @@ function render(){
  page=Math.min(page,maxPage);
  const start=page*size,end=Math.min(start+size,active.length);
  if(!active.length){
-   likedGrid.append(create('p','tm-liked-empty',ownerConnected?'No se recibieron canciones guardadas.':'Las favoritas todavía no están publicadas.'));
+   const button=create('button','tm-empty-action',accountConnected?'EXPLORAR MI MÚSICA':'CONECTAR SPOTIFY');button.type='button';
+   button.onclick=()=>accountConnected?el('latest').scrollIntoView({behavior:'smooth'}):el('saved-trigger').click();
+   likedGrid.append(button);
  }else{
    for(const t of active.slice(start,end)){
      const card=create('article','tm-liked-card');
@@ -59,12 +60,13 @@ function render(){
  const pager=el('tm-liked-pager');
  if(pager)pager.hidden=count<=size;
  el('tm-liked-prev').disabled=page===0||loading;
- more.disabled=loading||((page+1)*size>=active.length&&!(ownerConnected&&canFetchMore));
+ more.disabled=loading||((page+1)*size>=active.length&&!(accountConnected&&canFetchMore));
  more.hidden=false;
  el('tm-liked-all').disabled=!active.length;
  el('collection-count-3').textContent=active.length?count+' '+(count===1?'CANCIÓN':'CANCIONES'):'';
  label.hidden=true;
  if(modalOpen)renderLikedAll();
+ window.TransmissionUI?.refresh?.();
 }
 function renderLikedAll(){
  const host=el('tm-liked-all-grid');if(!host)return;
@@ -82,11 +84,11 @@ function renderLikedAll(){
  }
  if(!tracks.length)host.append(create('p','tm-liked-empty','Sin coincidencias.'));
  el('tm-liked-total').textContent=tracks.length+' / '+(likesTotal||liked.length);
- el('tm-liked-load').hidden=!(ownerConnected&&canFetchMore);
+ el('tm-liked-load').hidden=!(accountConnected&&canFetchMore);
 }
 function fetchLikedBatch(){
  if(likedRequest)return likedRequest;
- if(!ownerConnected||!canFetchMore)return Promise.resolve(false);
+ if(!accountConnected||!canFetchMore)return Promise.resolve(false);
  loading=true;more.disabled=true;
  likedRequest=(async()=>{
   try{
@@ -108,7 +110,7 @@ function fetchLikedBatch(){
 }
 async function loadLikedSelection(){
  // Twenty small pages cover up to 1,050 saved songs without an unbounded request loop.
- for(let i=0;ownerConnected&&canFetchMore&&i<20;i++){
+ for(let i=0;accountConnected&&canFetchMore&&i<20;i++){
   if(!await fetchLikedBatch())break;
  }
  return sortedLiked();
@@ -144,7 +146,7 @@ function closeLikedAll(){
 }
 function fillPlaylistRail(){
  if(!rt)return;
- const source=unique(liked.length?liked:(rt.ownerTracks?.length?rt.ownerTracks:rt.publicSnapshot?.tracks||[]));
+ const source=unique(liked.length?liked:(rt.accountTracks?.length?rt.accountTracks:rt.publicSnapshot?.tracks||[]));
  if(!source.length)return;
  const rail=el('mixtapes'),anchor=el('rail-all');
  if(!rail||!anchor)return;
@@ -173,7 +175,7 @@ function fillPlaylistRail(){
 }
 
 async function loadFirst(){
- if(ownerConnected){
+ if(accountConnected){
    try{
      const data=await sp.api('/me/tracks?limit=50&offset=0');
      liked=(data.items||[]).map(x=>x.track).filter(valid);
@@ -189,7 +191,7 @@ async function loadFirst(){
  rt?.fillEmptyHome?.(liked);
  fillPlaylistRail();
  const holder=el('recent-items');
- if(ownerConnected && liked.length && holder && !holder.querySelector('button')){
+ if(accountConnected && liked.length && holder && !holder.querySelector('button')){
    // Another section can fall back to saved songs, without inventing play history.
    el('recent-label').textContent='DEL ARCHIVO';
    holder.replaceChildren();
@@ -206,7 +208,7 @@ async function loadFirst(){
 async function loadNext(){
  if(loading)return;
  const desired=(page+2)*pageSize();
- if(desired>liked.length&&ownerConnected&&canFetchMore)await fetchLikedBatch();
+ if(desired>liked.length&&accountConnected&&canFetchMore)await fetchLikedBatch();
  if((page+1)*pageSize()<liked.length)page++;
  render()
 }
@@ -218,9 +220,9 @@ function recentWeight(entries){
    const item=score.get(t.id)||{track:t,score:0};
    item.score+=value;score.set(t.id,item);
  }
- if(ownerConnected){
+ if(accountConnected){
    recentEvents.slice(0,50).forEach((x,i)=>add(x.track,Math.max(6,115-i*2.3)));
-   ownerTop.slice(0,30).forEach((t,i)=>add(t,Math.max(9,80-i*2.3)));
+   accountTop.slice(0,30).forEach((t,i)=>add(t,Math.max(9,80-i*2.3)));
    liked.slice(0,100).forEach((t,i)=>add(t,Math.max(5,24-i*.25)));
  }else{
    (rt?.publicSnapshot?.recent||[]).slice(0,20).forEach((t,i)=>add(t,Math.max(8,105-i*4.5)));
@@ -249,38 +251,39 @@ async function startSongs(tracks){
  return !!await rt.playSequence(playlist);
 }
 let discoveryCache=[],discoveryTime=0,discoveryTurn=0;
-try{discoveryTurn=Math.max(0,Number(localStorage.getItem('tm_discovery_turn'))||0)}catch{}
+const accountStorageKey=name=>name+':'+(window.TransmissionRuntime?.account?.id||'anonymous');
 function previousDiscoveries(){
- try{return new Set(JSON.parse(localStorage.getItem('tm_discovery_seen')||'[]'))}
+ try{return new Set(JSON.parse(localStorage.getItem(accountStorageKey('tm_discovery_seen'))||'[]'))}
  catch{return new Set()}
 }
 function rememberDiscoveries(tracks){
  try{
    const seen=[...previousDiscoveries(),...tracks.map(t=>t.id)];
-   localStorage.setItem('tm_discovery_seen',JSON.stringify(seen.slice(-160)));
+   localStorage.setItem(accountStorageKey('tm_discovery_seen'),JSON.stringify(seen.slice(-160)));
  }catch{}
 }
 async function lightDiscovery(known,force=false){
  if(!rt?.account)return [];
  if(!force&&discoveryCache.length&&Date.now()-discoveryTime<300000)return [...discoveryCache];
  const previous=previousDiscoveries();
- const owned=unique([...known,...liked,...(rt.ownerTracks||[]),...(rt.recent||[])]);
+ const owned=unique([...known,...liked,...(rt.accountTracks||[]),...(rt.recent||[])]);
  const knownIds=new Set(owned.map(t=>t.id));
  // Use actual artists appearing in recent listening, top tracks and saved songs.
  const artists=[];
  const seenArtist=new Set();
- for(const t of [...recentEvents.map(x=>x.track),...ownerTop,...liked]){
+ for(const t of [...recentEvents.map(x=>x.track),...accountTop,...liked]){
    for(const a of t?.artists||[]){
      if(!a.name||seenArtist.has(a.name.toLocaleLowerCase()))continue;
      seenArtist.add(a.name.toLocaleLowerCase());artists.push(a);
    }
  }
  if(!artists.length){
-   for(const a of rt.publicSnapshot?.artists||[])if(a?.name)artists.push(a)
+   for(const a of rt.accountArtists||[])if(a?.name)artists.push(a)
  }
  if(!artists.length)return [];
+ try{discoveryTurn=Math.max(0,Number(localStorage.getItem(accountStorageKey('tm_discovery_turn')))||0)}catch{}
  discoveryTurn++;
- try{localStorage.setItem('tm_discovery_turn',String(discoveryTurn))}catch{}
+ try{localStorage.setItem(accountStorageKey('tm_discovery_turn'),String(discoveryTurn))}catch{}
  const fresh=[],later=[];
  const consider=track=>{
    if(!valid(track)||knownIds.has(track.id))return;
@@ -347,7 +350,7 @@ async function lightDiscovery(known,force=false){
  return [...discoveryCache]
 }
 function readStarts(){
- try{return JSON.parse(localStorage.getItem('tm_recent_starts')||'[]').filter(id=>/^[A-Za-z0-9]{22}$/.test(id)).slice(-35)}
+ try{return JSON.parse(localStorage.getItem(accountStorageKey('tm_recent_starts'))||'[]').filter(id=>/^[A-Za-z0-9]{22}$/.test(id)).slice(-35)}
  catch{return []}
 }
 function recordStart(id){
@@ -355,7 +358,7 @@ function recordStart(id){
  try{
    const history=readStarts().filter(x=>x!==id);
    history.push(id);
-   localStorage.setItem('tm_recent_starts',JSON.stringify(history.slice(-35)));
+   localStorage.setItem(accountStorageKey('tm_recent_starts'),JSON.stringify(history.slice(-35)));
  }catch{}
 }
 function arrangeSession(familiar,discoveries){
@@ -373,9 +376,9 @@ function arrangeSession(familiar,discoveries){
  let starters=alternatives.filter(t=>!recentlyStarted.includes(t.id));
  if(!starters.length)starters=alternatives;
  let turn=0;
- try{turn=Math.max(0,Number(localStorage.getItem('tm_now_turn')||0))}catch{}
+ try{turn=Math.max(0,Number(localStorage.getItem(accountStorageKey('tm_now_turn'))||0))}catch{}
  turn++;
- try{localStorage.setItem('tm_now_turn',String(turn))}catch{}
+ try{localStorage.setItem(accountStorageKey('tm_now_turn'),String(turn))}catch{}
  let starter=starters[(turn-1)%starters.length]||null;
  if(starter?.id===starts.at(-1)&&starters.length>1){
    starter=starters.find(t=>t.id!==starter.id)||starter;
@@ -421,7 +424,7 @@ async function playLiked(){
  try{await startSongs(await loadLikedSelection())}finally{render()}
 }
 async function fetchRecent(){
- if(!ownerConnected)return;
+ if(!accountConnected)return;
  if(rt.recent?.length){
    recentEvents=rt.recent.filter(valid).map(track=>({track}));
    return;
@@ -439,20 +442,20 @@ async function prepare(){
    await new Promise(done=>setTimeout(done,300));
  }
  if(!rt)return;
- ownerConnected=rt.account?.id===owner;
+ accountConnected=!!rt.account;
  accountReady=!!rt.account;
- if(ownerConnected){
-   ownerTop=rt.ownerTracks||[];
+ if(accountConnected){
+   accountTop=rt.accountTracks||[];
    // Reuse the already-loaded top tracks instead of doubling API requests.
  }
  await Promise.allSettled([loadFirst(),fetchRecent()]);
- const hasRecent=ownerConnected?recentEvents.length:rt.publicSnapshot?.recent?.length||0;
+ const hasRecent=accountConnected?recentEvents.length:rt.publicSnapshot?.recent?.length||0;
  const hasSelection=recentWeight(recentEvents).length>0;
  el('tm-now-play').hidden=!hasSelection;
  el('tm-now-play').disabled=!hasSelection;
  el('tm-now-caption').textContent=hasRecent?'Lo que más escuchas últimamente':'Basada en tu colección';
  const station=el('tm-station-play');
- if(station&&!hasSelection && !(rt?.ownerTracks?.length||rt?.playlists?.length))station.hidden=true;
+ if(station&&!hasSelection && !(rt?.accountTracks?.length||rt?.playlists?.length))station.hidden=true;
 }
 async function surprisePlay(){
  const favorites=recentWeight(recentEvents);
@@ -503,7 +506,7 @@ async function changeLikedOrder(value){
  el('tm-liked-sort').value=value;
  el('tm-liked-sort-inline').value=value;
  render();
- if(ownerConnected&&canFetchMore&&value!=='new'){
+ if(accountConnected&&canFetchMore&&value!=='new'){
    let pages=0;
    while(canFetchMore&&pages<12){
      if(!await fetchLikedBatch())break;
@@ -517,7 +520,7 @@ el('tm-liked-sort-inline').onchange=()=>void changeLikedOrder(el('tm-liked-sort-
 el('tm-liked-load').onclick=()=>void fetchLikedBatch();
 
 document.addEventListener('tm:library-changed',event=>{
- if(!ownerConnected)return;
+ if(!accountConnected)return;
  const id=event.detail?.id,saved=event.detail?.saved;
  if(!id)return;
  if(saved===true){
@@ -534,14 +537,14 @@ document.addEventListener('tm:library-changed',event=>{
  render();
 });
 
-window.addEventListener?.('tm:owner-track',event=>{
+window.addEventListener?.('tm:account-track',event=>{
   const track=event.detail?.track;
-  if(ownerConnected&&valid(track))recentEvents=[{track},...recentEvents].slice(0,50);
+  if(accountConnected&&valid(track))recentEvents=[{track},...recentEvents].slice(0,50);
  });
  window.addEventListener?.('resize',render);
 window.TransmissionTaste={
  arrangeSession,
- getOwnerLiked:()=>ownerConnected?unique(liked).slice(0,40):[],
+ getLikedForExport:()=>accountConnected?unique(liked).slice(0,40):[],
  getPublicLiked:()=>unique(liked).slice(0,40),
  getNowSongs:()=>recentWeight(recentEvents),
  refreshRotation,surprisePlay,

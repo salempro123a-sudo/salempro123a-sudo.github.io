@@ -1,283 +1,70 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-<link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml">
-<link rel="shortcut icon" href="./favicon.svg?v=2" type="image/svg+xml">
-<meta name="application-name" content="TRANSMISSION">
-<meta name="apple-mobile-web-app-title" content="TRANSMISSION">
-<meta property="og:site_name" content="TRANSMISSION">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#080808">
-  <meta name="description" content="TRANSMISSION: tu biblioteca, playlists y canciones de Spotify dentro de una web personal.">
+<html lang="es"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000">
+  <meta name="application-name" content="TRANSMISSION"><meta name="apple-mobile-web-app-title" content="TRANSMISSION"><meta property="og:site_name" content="TRANSMISSION"><meta name="description" content="Tu música, playlists y descubrimientos de Spotify en TRANSMISSION.">
   <title>TRANSMISSION — Personal music archive</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-:root{--ink:#0a0a0a;--paper:#f2f0eb;--line:#4f4f4f;--yellow:#e6ff60;--mono:'DM Mono',monospace;--display:'Barlow Condensed','Arial Narrow',Arial,sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:85px}body{margin:0;background:var(--ink);color:#f8f8f8;font-family:var(--display);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}a{color:inherit;text-decoration:none}svg{fill:none;stroke:currentColor;stroke-width:1.7}img{max-width:100%}.skip-link{position:absolute;top:-60px;left:8px;background:white;color:black;padding:12px;z-index:500}.skip-link:focus{top:8px}.site-header{position:sticky;top:0;z-index:100;background:#050505}.top-bar{height:45px;display:flex;align-items:stretch;border-bottom:1px solid #555}.brand{padding:0 12px;display:grid;place-items:center;border-right:1px solid #4f4f4f;min-width:74px}.brand-mark{background:white;color:black;padding:0 4px 1px;font-family:var(--display);font-size:29px;font-style:italic;font-weight:900;line-height:30px;letter-spacing:-2px;transform:skew(-8deg)}.brand-mark-slash{font-size:21px;letter-spacing:-3px}.main-nav{display:flex;align-items:stretch;flex:1;min-width:0}.nav-link,.support-link{display:flex;align-items:center;padding:0 14px;font-size:16px;line-height:1;white-space:nowrap;font-weight:600}.nav-link:hover,.nav-link.is-current{color:#dedede}.nav-link:hover{text-decoration:underline;text-underline-offset:5px}.support-link{background:#f9f9f9;color:black;font-weight:800;height:29px;align-self:center;margin-left:3px;padding:0 10px;transition:background .2s}.support-link:hover{background:var(--yellow)}.support-link span{font-size:11px;margin-left:8px}.header-tools{display:flex;align-items:stretch;margin-left:auto}.icon-button{background:transparent;color:white;border:0;display:grid;place-items:center;min-width:40px}.header-search{width:45px}.header-search svg{width:18px;height:18px}.tool-divider{height:18px;align-self:center;border-left:1px solid #555;margin:0 2px}.header-account{display:flex;align-items:center;gap:8px;border:0;background:transparent;color:white;font-size:14px;padding:0 10px;white-space:nowrap}.header-account:hover,.icon-button:hover{color:var(--yellow)}.header-account svg{width:16px;height:16px}.saved-counter{font-family:var(--mono);font-size:9px;background:#444;padding:2px 4px;border-radius:8px}.more-trigger{font-size:15px;letter-spacing:3px;width:36px}.mobile-trigger{display:none}.live-strip{height:34px;display:flex;align-items:stretch;border-bottom:1px solid #777;background:#101010;overflow:hidden}.live-badge{font-size:12px;font-weight:900;color:black;background:#fff;white-space:nowrap;padding:0 9px;display:flex;align-items:center;gap:5px}.pulse-dot{display:inline-block;width:7px;height:7px;background:#ef4242;border-radius:100%;animation:pulse 1.7s infinite}.live-channel{color:white;border:0;border-left:1px solid #777;border-right:1px solid #777;background:#080808;display:flex;gap:8px;align-items:center;min-width:0;flex:1;text-align:left;padding:0;transition:background .15s}.live-channel:hover,.live-channel.is-active{background:#242424}.channel-number{align-self:stretch;background:white;color:black;font-weight:900;font-size:18px;padding:3px 10px;min-width:31px;display:grid;place-items:center}.channel-play{font-size:13px;padding-left:1px}.live-channel strong{font-size:15px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;letter-spacing:.03em}.broadcast-city{font-size:12px;font-weight:500;margin-left:auto;padding:0 8px}.strip-control{border:0;border-left:1px solid #777;background:#0c0c0c;color:white;min-width:37px;font-size:15px}.strip-control:hover{background:white;color:black}
-.lead-layout{display:grid;grid-template-columns:minmax(0,1fr) 212px;min-height:calc(100vh - 80px);height:min(760px,calc(100svh - 80px));border-bottom:1px solid #787878}.hero-slider,.hero-visual{min-height:0;height:100%;position:relative;overflow:hidden}.hero-visual{background:#151515}.hero-image{position:absolute;inset:0;background-position:center;background-size:cover;transform:scale(1.035);transition:opacity .42s ease,transform 7s ease;opacity:.88}.hero-image.animate{transform:scale(1.115)}.hero-visual:before{content:"";pointer-events:none;position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.32) 38%,transparent 75%),linear-gradient(90deg,rgba(0,0,0,.32),transparent 75%);z-index:1}.hero-grain{pointer-events:none;position:absolute;inset:0;z-index:1;opacity:.17;background-image:url('data:image/svg+xml,%3Csvg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23n)" opacity=".28"/%3E%3C/svg%3E')}.hero-topline{position:absolute;left:26px;right:26px;top:23px;z-index:2;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-shadow:0 1px 4px #111}.hero-onair{display:flex;align-items:center;gap:6px}.hero-onair i{width:6px;height:6px;border-radius:50%;background:#e74747;display:block;animation:pulse 1.5s infinite}.hero-caption{position:absolute;left:clamp(24px,4.2vw,70px);bottom:112px;right:10%;z-index:3;max-width:620px}.hero-play{height:57px;width:57px;background:white;border:1px solid white;color:#0b0b0b;display:grid;place-items:center;margin-bottom:18px;transition:transform .2s,background .2s}.hero-play svg{width:26px;height:26px;fill:currentColor;stroke:none}.hero-play:hover{transform:scale(1.08);background:var(--yellow)}.hero-kicker{font-size:14px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 3px}.hero-title{font-weight:800;line-height:.8;letter-spacing:-.045em;font-size:clamp(60px,7.7vw,148px);margin:0 0 16px;text-transform:uppercase}.hero-description{font-family:Arial,sans-serif;max-width:390px;font-size:15px;line-height:1.4;margin:0}.slider-footer{position:absolute;z-index:3;left:clamp(24px,4.2vw,70px);bottom:35px;right:30px;display:flex;align-items:center;gap:14px}.slider-progress{height:2px;flex:1;max-width:465px;background:#767676;overflow:hidden}.slider-progress span{display:block;width:1%;background:white;height:100%;transition:width .12s linear}.slider-count{font-family:var(--mono);font-size:11px;color:#ddd;white-space:nowrap}.slider-controls{display:flex;gap:14px;margin-left:auto}.slider-controls button{background:none;border:0;color:white;font-size:31px;line-height:1;min-width:20px;transition:transform .18s}.slider-controls button:hover{transform:scale(1.2);color:var(--yellow)}#pause-slide{font-size:15px;font-weight:bold}.mixtape-rail{height:100%;border-left:1px solid #666;display:flex;flex-direction:column;min-height:0}.rail-head{flex:1.65;min-height:0;position:relative;background:linear-gradient(175deg,rgba(0,0,0,.5),#141414),radial-gradient(circle at 70% 15%,#4d233b,transparent 60%);padding:21px 13px 13px;display:flex;flex-direction:column;border-bottom:1px solid #777}.rail-heading{font-size:29px;font-weight:900;line-height:.83;letter-spacing:-.01em}.rail-heading-arrows{position:absolute;right:14px;top:17px;font-size:23px}.rail-head p{font-family:Arial,sans-serif;font-size:12px;line-height:1.38;max-width:165px;margin-top:auto}.rail-item{background:#101010;flex:1;min-height:0;display:flex;align-items:center;gap:9px;text-align:left;color:white;border:0;border-bottom:1px solid #666;padding:5px 9px;overflow:hidden;transition:background .18s}.rail-item:hover{background:#2c2c2c}.rail-item-cover{height:62px;width:56px;flex-shrink:0;display:grid;place-items:center;font-size:30px}.art-pool{background:#e17b7c;color:#ffedbe}.art-focus{background:#8299ac;color:white}.art-low{background:#b6ba8a;color:#32352e}.art-feel{background:#e3c04a;color:#453523}.rail-item-label{font-size:18px;line-height:1.02;font-weight:800;flex:1}.rail-item-label small{display:block;font-size:9px;color:#aaa;letter-spacing:.08em;margin-top:5px}.rail-item-arrow{font-size:13px}.rail-all{border:0;background:white;color:black;height:43px;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:13px;font-weight:900;letter-spacing:.02em}.rail-all:hover{background:var(--yellow)}
-.catalog-section{padding:32px 24px 54px;border-bottom:1px solid #777}.section-heading{display:flex;justify-content:space-between;gap:18px;align-items:end;margin-bottom:22px}.section-heading .eyebrow{margin-bottom:5px}.eyebrow{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.09em;color:#aaa}.section-heading h2{font-weight:900;font-size:34px;line-height:1;margin:0;letter-spacing:-.01em}.heading-indicator{font-size:15px;vertical-align:top;color:#aaa;margin-left:4px}.view-all{font-size:14px;border:0;background:transparent;color:white;padding:5px 0;font-weight:600;letter-spacing:.02em;white-space:nowrap}.view-all span{margin-left:4px}.view-all:hover{color:var(--yellow)}.picks-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}.record-card{min-width:0}.record-image{display:block;border:1px solid #5e5e5e;position:relative;aspect-ratio:1 / 1;width:100%;overflow:hidden;background:#181818;padding:0;text-align:left;color:white}.record-art{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .6s cubic-bezier(.2,.7,.2,1),filter .4s}.record-image:hover .record-art{transform:scale(1.065);filter:brightness(.88)}.record-image:after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 0 white;transition:box-shadow .2s;pointer-events:none}.record-image:hover:after{box-shadow:inset 0 0 0 2px white}.card-play{position:absolute;left:12px;bottom:12px;width:37px;height:37px;background:white;color:black;display:grid;place-items:center;font-size:14px;opacity:0;transform:translateY(8px);transition:.2s}.record-image:hover .card-play,.record-image:focus-visible .card-play{opacity:1;transform:translateY(0)}.record-index{position:absolute;right:9px;top:9px;padding:4px 6px;background:#000c;color:white;font-family:var(--mono);font-size:9px}.record-info{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-top:12px}.record-type{font-family:var(--mono);font-size:10px;color:#aaa}.record-info h3{font-size:22px;line-height:1.02;margin:4px 0 5px;font-weight:800}.record-info p{margin:0;max-width:260px;color:#999;font-family:Arial,sans-serif;font-size:12px;line-height:1.38}.save-button{flex-shrink:0;color:white;background:transparent;border:1px solid #777;width:29px;height:29px;display:grid;place-items:center;font-family:Arial,sans-serif;font-size:24px;font-weight:normal;line-height:1}.save-button:hover,.save-button.is-saved{color:black;background:var(--yellow);border-color:var(--yellow)}.graphic-one{background:linear-gradient(147deg,#f26930 0 52%,#220e28 52%);padding:21px}.graphic-one .graphic-overline{position:absolute;top:12px;left:18px;font:9px var(--mono);color:black}.graphic-one b{position:absolute;bottom:15%;left:10px;color:#f5eacb;font-size:clamp(40px,5.5vw,101px);font-style:italic;font-weight:900;line-height:.65;letter-spacing:-.09em;transform:rotate(-8deg);text-shadow:5px 5px 0 #090909}.graphic-bottom{position:absolute;bottom:12px;right:12px;font:10px var(--mono);color:#ffceb8}.graphic-two{background:radial-gradient(circle at 54% 40%,#c6e8c2 0,#4e6f68 24%,#141a3b 42%,#131216 70%)}.graphic-two .orbital{position:absolute;left:15%;top:12%;width:80%;height:75%;border:1px solid #d1f1baaa;border-radius:50%;transform:rotate(35deg) scaleX(.5)}.graphic-two .orbital-two{transform:rotate(-35deg) scaleX(.7)}.graphic-two strong{position:absolute;font-size:clamp(50px,5vw,96px);font-weight:900;line-height:.74;letter-spacing:-.06em;left:8%;bottom:15%;color:#e5ecde;text-shadow:3px 3px 12px #111}.graphic-two small{position:absolute;bottom:7%;left:9%;font:10px var(--mono)}.graphic-three{background:#9d85ce;color:#1a1432}.graphic-three .graphic-number{position:absolute;top:13px;left:16px;font:10px var(--mono)}.graphic-three strong{position:absolute;top:27%;left:6%;font-size:clamp(49px,5.1vw,102px);font-weight:900;line-height:.67;letter-spacing:-.075em;z-index:2}.connections-lines{position:absolute;inset:-30%;background:repeating-linear-gradient(25deg,transparent 0 19px,#2c2548 20px 21px,transparent 22px 36px);opacity:.28;transform:rotate(16deg)}.graphic-footer{position:absolute;bottom:13px;right:13px;font:10px var(--mono)}
-.discover-panel{min-height:530px;display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #666;overflow:hidden}.discover-copy{padding:clamp(38px,5vw,80px);display:flex;flex-direction:column;align-items:start;justify-content:center;background:#d6dfdb;color:#0d1212}.discover-copy .eyebrow{color:#444}.discover-copy h2{margin:22px 0;font-size:clamp(67px,7vw,134px);letter-spacing:-.065em;font-weight:900;line-height:.81}.heading-period{color:#e95537}.discover-copy p{font-family:Arial,sans-serif;font-size:15px;max-width:390px;line-height:1.55;margin:0 0 28px}.outline-cta{border:1px solid currentColor;display:flex;align-items:center;justify-content:space-between;gap:40px;padding:12px 14px;font-size:14px;font-weight:900;transition:.2s;background:transparent;color:inherit}.outline-cta:hover{background:#121212;color:white}.outline-cta span{font-size:20px}.discover-art{position:relative;min-height:500px;background:#aacead;overflow:hidden}.discover-art:before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 20px,#36534831 21px 22px),repeating-linear-gradient(90deg,transparent 0 20px,#36534831 21px 22px)}.circles{border-radius:50%;border:3px solid #0a2a20;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);aspect-ratio:1}.circle-a{width:75%;background:#bdd4bc;box-shadow:0 0 0 35px #7cb58b,0 0 0 39px #18392f}.circle-b{width:50%;border-width:10px;border-style:double;background:#dbe6a4}.circle-c{width:25%;border-width:16px;background:#163a30}.disc-mark{position:absolute;inset:0;display:grid;place-items:center;color:#dbf5be;font-size:clamp(90px,13vw,210px);letter-spacing:-.1em;font-style:italic;font-weight:900;transform:rotate(-18deg)}.sideprint{position:absolute;left:18px;bottom:17px;color:#10281f;font:10px var(--mono)}.crosshair{position:absolute;right:21px;top:18px;color:#18362d;font-size:42px;animation:slow-spin 18s linear infinite}.collection-section{padding-top:49px}.collection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.collection-tile{display:block;min-width:0;background:none;color:white;text-align:left;border:0;padding:0}.collection-art{position:relative;display:block;overflow:hidden;aspect-ratio:1.27}.collection-art-one{background:radial-gradient(circle at 50% 50%,#ffda1a 0 15%,#2c2822 16% 18%,#f18c24 19% 30%,#271b19 32% 45%,#d1481a 46% 58%,#211211 60%)}.collection-art-one:before{content:'';position:absolute;inset:-50%;background:repeating-conic-gradient(from 2deg at 50% 50%,transparent 0 12deg,#20130b70 13deg 14deg);animation:slow-spin 45s linear infinite}.distortion-title{position:absolute;font-size:clamp(42px,4.9vw,89px);font-weight:900;line-height:.8;letter-spacing:-.045em;left:18px;bottom:26px;transform:rotate(-3deg);text-shadow:4px 4px #170803;z-index:1}.distortion-coord{position:absolute;top:14px;left:17px;font:10px var(--mono);z-index:1}.collection-art-two{background:#edc9b1;color:#392415}.sun-disc{position:absolute;left:30%;top:9%;width:65%;aspect-ratio:1;border-radius:50%;background:linear-gradient(165deg,#fef1dc 5%,#e7a478 70%,#be4e55 100%);box-shadow:0 0 0 20px #f0b3a1,0 0 0 23px #4b2d28}.collection-art-two strong{position:absolute;left:8%;bottom:8%;font-size:clamp(64px,6.4vw,120px);font-weight:900;letter-spacing:-.04em;line-height:.73}.tiny-invert{position:absolute;top:13px;left:13px;font:9px var(--mono)}.collection-art-three{background:#0f442d;color:#d1ff7e}.collection-art-three:before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 4px,#a4ff843b 5px 6px);mix-blend-mode:screen}.pixel-cloud{position:absolute;right:5%;top:0;font-size:clamp(52px,7vw,110px);font-family:monospace;line-height:.6;letter-spacing:-.13em;transform:rotate(20deg);opacity:.75}.collection-art-three strong{position:absolute;left:7%;bottom:12%;font-size:clamp(42px,5vw,92px);font-weight:900;letter-spacing:-.055em;line-height:.75}.collection-art-three small{position:absolute;left:7%;bottom:6%;font:10px var(--mono)}.collection-tile:hover .collection-art{filter:contrast(1.15)}.collection-tile:hover .collection-art>strong,.collection-tile:hover .distortion-title{transform:translateY(-7px);transition:.2s}.collection-caption{display:flex;justify-content:space-between;gap:8px;padding:13px 0}.collection-caption b{font-size:19px;line-height:1}.collection-caption span{font:9px var(--mono);color:#bdbdbd;align-self:center;white-space:nowrap}.marquee-band{background:var(--yellow);color:#101010;overflow:hidden;padding:15px 0;border-bottom:1px solid #131313}.marquee-inner{white-space:nowrap;font-weight:900;letter-spacing:-.02em;font-size:clamp(24px,3vw,49px);line-height:1;animation:move-left 30s linear infinite;width:max-content}.studio-block{display:grid;grid-template-columns:1fr 1fr;min-height:530px;border-bottom:1px solid #777}.studio-image{position:relative;overflow:hidden;background:#111;min-height:500px}.studio-img{position:absolute;inset:0;background-size:cover;background-position:center;filter:grayscale(.75) contrast(1.1);transition:filter .5s,transform 1s}.studio-image:hover .studio-img{filter:grayscale(0);transform:scale(1.05)}.studio-sticker{position:absolute;right:22px;top:30px;background:var(--yellow);color:black;font-size:28px;font-weight:900;line-height:.8;padding:17px 22px;transform:rotate(8deg);box-shadow:7px 7px black}.studio-sticker small{font:10px var(--mono)}.studio-content{padding:clamp(38px,5vw,90px);display:flex;flex-direction:column;justify-content:center;align-items:start;background:#1a1a1a}.studio-content h2{font-size:clamp(62px,7vw,130px);line-height:.8;font-weight:900;letter-spacing:-.04em;margin:20px 0}.studio-content p{font:15px/1.5 Arial,sans-serif;max-width:380px;margin:0 0 30px;color:#d0d0d0}.studio-content .outline-cta:hover{background:white;color:black}.support-section{padding:64px 42px 80px;background:#d8e363;color:#111}.support-section .eyebrow{color:#30390b}.support-flex{display:flex;align-items:end;justify-content:space-between;gap:50px}.support-flex h2{margin:17px 0 0;font-size:clamp(75px,10vw,190px);line-height:.75;letter-spacing:-.05em;font-weight:900}.support-flex>div{max-width:280px}.support-flex p{font:15px/1.4 Arial,sans-serif;margin:0 0 26px}.light-cta{border-bottom:2px solid;padding:8px 0;font-weight:900;display:flex;justify-content:space-between;gap:50px;font-size:16px}
-.footer{background:#080808}.footer-main{display:grid;grid-template-columns:1.5fr .7fr .9fr 1.3fr;gap:40px;padding:58px 30px 86px}.footer-logo{font-size:93px;font-weight:900;letter-spacing:-.09em;line-height:.85;font-style:italic}.footer-logo span{font-size:34px;vertical-align:top;letter-spacing:normal;margin-left:12px}.footer-main p{font:12px/1.4 var(--mono);color:#999}.footer-title{display:block;font:11px var(--mono);color:#8d8d8d;margin-bottom:18px}.footer-main a{display:block;font-size:20px;line-height:1.6;font-weight:700}.footer-main a:hover{color:var(--yellow)}.footer-note{display:block;margin-top:20px;font:10px var(--mono);color:#666}.footer-news p{max-width:220px}.coming-soon{margin-top:30px;border-bottom:1px solid #888;padding-bottom:10px;display:flex;justify-content:space-between;font:14px var(--mono)}.footer-bottom{display:flex;justify-content:space-between;gap:15px;padding:14px 30px;border-top:1px solid #555;font:10px var(--mono);color:#a6a6a6}.footer-bottom .pulse-dot{width:5px;height:5px}
-.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:none;align-items:flex-start;justify-content:center;padding:90px 20px 25px;overflow-y:auto;backdrop-filter:blur(6px)}.overlay.is-open{display:flex;animation:fade-in .2s}.overlay-panel{position:relative;width:min(720px,100%);background:#161616;border:1px solid #777;padding:clamp(27px,5vw,60px);box-shadow:0 18px 90px #000b}.close-overlay{position:absolute;right:14px;top:12px;background:none;border:0;color:white;font-size:24px;padding:6px 11px}.close-overlay:hover{color:var(--yellow)}.overlay h2{font-size:clamp(44px,6vw,84px);font-weight:900;letter-spacing:-.02em;line-height:.83;margin:15px 0 28px}.search-field{display:flex;gap:12px;border-bottom:2px solid white;padding-bottom:11px}.search-field svg{width:22px;height:22px;align-self:center}.search-field input{width:100%;background:transparent;border:0;outline:0;color:white;font-size:23px;font-weight:700}.search-field input::placeholder{color:#777}.search-results{margin-top:20px;display:flex;flex-direction:column;gap:1px}.search-result{color:white;background:#222;border:0;text-align:left;display:flex;justify-content:space-between;align-items:center;font-size:19px;font-weight:800;padding:12px}.search-result:hover{background:#555}.search-result small{font:10px var(--mono);color:#aaa}.details-panel>p{font:16px/1.45 Arial,sans-serif;color:#c6c6c6;max-width:510px}.details-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:35px}.details-panel .details-hint{font:11px/1.5 var(--mono);margin-top:26px;color:#888}.button-cta:hover{background:white;color:black}.toast{position:fixed;bottom:22px;right:20px;z-index:240;max-width:350px;background:var(--yellow);color:#111;padding:14px 20px;font:12px var(--mono);opacity:0;pointer-events:none;transform:translateY(15px);transition:opacity .2s,transform .2s;box-shadow:8px 8px 0 #000}.toast.is-visible{opacity:1;transform:translateY(0)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}@keyframes slow-spin{to{transform:rotate(360deg)}}@keyframes move-left{to{transform:translateX(-50%)}}@keyframes fade-in{from{opacity:0}to{opacity:1}}
-@media(max-width:1180px){.broadcast-city{display:none}.nav-link{padding:0 10px}.header-account span:not(.saved-counter){display:none}.picks-grid{gap:15px}.record-info h3{font-size:19px}.collection-caption{flex-direction:column}.discover-copy h2{font-size:clamp(62px,6.5vw,98px)}}
-@media(max-width:850px){.top-bar{height:54px}.mobile-trigger{display:grid;margin-right:0}.brand{min-width:66px}.main-nav{display:none;position:absolute;top:54px;left:0;right:0;background:#111;flex-direction:column;border-bottom:1px solid #777;padding:12px 16px 18px;box-shadow:0 14px 25px #0008}.main-nav.is-open{display:flex}.main-nav a{min-height:38px;padding:9px 12px;font-size:22px}.main-nav .support-link{align-self:flex-start;margin-top:10px;min-height:32px;font-size:17px}.header-tools{margin-left:auto}.live-strip{height:34px}.live-channel strong{font-size:12px}.live-channel:nth-of-type(3){display:none}.lead-layout{grid-template-columns:1fr;min-height:0;height:auto}.hero-slider,.hero-visual{height: min(650px,calc(82svh - 88px));min-height:430px}.mixtape-rail{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:100px 110px;height:auto;border-left:0}.rail-head{grid-column:1/-1;padding:14px 17px;display:block}.rail-heading{font-size:27px}.rail-head p{max-width:unset;margin:8px 0}.rail-item{border-right:1px solid #666;min-width:0;flex-direction:column;align-items:start;justify-content:center;padding:10px}.rail-item-cover{height:35px;width:35px;font-size:19px}.rail-item-label{font-size:16px}.rail-item-label small{display:none}.rail-item-arrow{display:none}.rail-all{display:none}.picks-grid{grid-template-columns:repeat(2,1fr);row-gap:29px}.discover-panel{grid-template-columns:1fr}.discover-copy{min-height:450px}.discover-art{min-height:420px}.studio-block{grid-template-columns:1fr}.studio-content{min-height:450px}.studio-image{min-height:430px}.footer-main{grid-template-columns:1.6fr 1fr;gap:35px}.footer-news{grid-column:2}.support-flex{align-items:start;flex-direction:column;gap:24px}.support-flex h2{font-size:clamp(75px,12vw,120px)}}
-@media(max-width:540px){.top-bar{height:49px}.main-nav{top:49px}.brand{padding:0 8px}.brand-mark{font-size:24px;line-height:27px}.header-account{padding:0 5px}.more-trigger,.tool-divider{display:none}.live-strip{height:32px}.live-badge{font-size:10px;padding:0 6px}.live-channel{flex:1}.live-channel .channel-number{font-size:14px;min-width:25px;padding:0 6px}.live-channel strong{font-size:12px;white-space:nowrap}.live-channel:nth-of-type(3){display:none}.strip-control{min-width:30px}.strip-control:nth-last-child(-n+2){display:none}.hero-slider,.hero-visual{height:clamp(470px,72svh,640px)}.hero-topline{left:15px;right:15px;top:14px;font-size:8px}.hero-caption{left:19px;right:15px;bottom:96px}.hero-title{font-size:clamp(67px,18vw,104px)}.hero-description{font-size:13px;max-width:260px}.hero-play{width:49px;height:49px}.slider-footer{left:19px;bottom:21px;right:15px}.slider-progress{max-width:unset}.slider-controls{gap:8px}.mixtape-rail{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:91px 88px 88px}.rail-head{grid-column:1/-1}.rail-item{flex-direction:row;padding:10px;gap:8px}.rail-item-label{font-size:17px}.rail-item-cover{flex-shrink:0}.catalog-section{padding:30px 14px 42px}.section-heading h2{font-size:28px}.picks-grid{gap:11px;row-gap:26px}.record-info{gap:5px}.record-info h3{font-size:19px}.record-info p{font-size:11px}.record-type{font-size:9px}.save-button{width:26px;height:26px;font-size:19px}.graphic-one b{font-size:clamp(37px,11vw,66px)}.graphic-two strong{font-size:clamp(34px,10vw,69px)}.graphic-three strong{font-size:clamp(30px,9vw,67px)}.record-index{font-size:7px}.discover-copy{padding:38px 20px;min-height:430px}.discover-copy h2{font-size:clamp(62px,15vw,93px)}.discover-art{min-height:370px}.collection-grid{grid-template-columns:1fr;gap:22px}.collection-art{aspect-ratio:1.4}.distortion-title,.collection-art-two strong,.collection-art-three strong{font-size:clamp(60px,17vw,105px)}.marquee-inner{font-size:30px}.studio-content{padding:40px 20px}.studio-content h2{font-size:clamp(72px,16vw,100px)}.studio-image{min-height:340px}.studio-sticker{font-size:22px}.support-section{padding:50px 20px}.support-flex h2{font-size:clamp(65px,16vw,100px)}.footer-main{grid-template-columns:1fr 1fr;gap:25px;padding:40px 18px}.footer-main>div:first-child{grid-column:1/-1}.footer-news{grid-column:1/-1}.footer-logo{font-size:65px}.footer-bottom{padding:13px 18px;flex-direction:column;font-size:9px}.overlay{padding:60px 10px}.overlay-panel{padding:35px 20px}.search-field input{font-size:17px}.search-result{font-size:16px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-
-</style>
-  
-  
-
-
-<style>
-/* Restore native TRANSMISSION editorial grid, with actual Spotify metadata instead of fake broadcasts */
-#hero-image{background-image:radial-gradient(circle at 64% 30%,#515d26 0 11%,#101212 12% 18%,#2b3320 19% 36%,#0a0c0d 60%),linear-gradient(120deg,#111,#343b33);opacity:1}
-.hero-visual{background:#141714}
-.tm-audio-panel{display:grid;grid-template-columns:85px minmax(0,1fr) minmax(155px,auto);align-items:center;gap:17px;background:#191919;padding:13px 18px;border-bottom:1px solid #5a5a5a}
-.tm-player-art{height:70px;width:70px;display:grid;place-items:center;background:radial-gradient(circle,#deff70,#172115);font-size:32px;font-weight:900;color:#121212;background-size:cover;background-position:center}
-.tm-player-copy{display:flex;flex-direction:column;gap:5px;overflow:hidden}
-.tm-player-copy strong{font-size:clamp(22px,3vw,34px);font-weight:900;line-height:1;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tm-player-copy small{font-family:var(--mono);font-size:11px;color:#aaa;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tm-player-state{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
-.tm-player-state span{font:10px var(--mono);color:#c3c3c3}
-.tm-button{background:var(--yellow);border:1px solid var(--yellow);color:#080808;padding:9px 12px;font-weight:900;font-size:15px}
-.tm-button:hover{background:white}
-.tm-status{font:11px/1.65 var(--mono);background:#161616;padding:8px 18px;color:#bbb;border-bottom:1px solid #4d4d4d;min-height:33px}
-.tm-status.is-error{color:#ff9f9f}
-.tm-strip-song{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:0 15px;white-space:nowrap;overflow:hidden}
-.tm-strip-song strong{font-size:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tm-strip-song small{font:10px var(--mono);color:#aaa;overflow:hidden;text-overflow:ellipsis}
-.tm-strip-owner{color:#a6a6a6;font:10px var(--mono);padding:0 14px;align-self:center;white-space:nowrap}
-.tm-rail-image{background-position:center;background-size:cover}
-.tm-empty{padding:22px 15px;background:#1b1b1b;color:#aaa;font:11px/1.7 var(--mono);grid-column:1/-1}
-.record-art.no-cover{background:radial-gradient(circle at 56% 41%,#8f9249 0 8%,#0f1614 9% 21%,#5e532b 22% 24%,#172318 25% 50%,#080808 66%)}
-.tm-recent-panel{background:linear-gradient(160deg,#080d0c,#203a39 57%,#030707)}
-.tm-studio-gradient{background:radial-gradient(circle at 40% 40%,#557b56,#0c2d21 26%,#090d0a 60%),repeating-conic-gradient(from 45deg,#181818 0 25deg,#040404 25deg 50deg)}
-.tm-recent-art-title{position:absolute;left:12%;top:35%;font-size:clamp(70px,8vw,150px);font-weight:900;font-style:italic;line-height:.7;letter-spacing:-.07em;text-shadow:7px 7px #080808}
-.tm-recent-art-title span{font-size:60px;color:var(--yellow)}
-.tm-history{display:block}
-.tm-history h2{font-size:clamp(43px,5vw,85px);margin:12px 0 22px}
-.tm-recent-items{width:100%;border-top:1px solid #555}
-.tm-recent-item{width:100%;padding:10px 0;display:flex;gap:12px;align-items:center;border:0;border-bottom:1px solid #555;background:none;color:white;text-align:left}
-.tm-recent-item:hover{background:#303030}
-.tm-recent-index{font:10px var(--mono);color:#888;width:20px;flex:none}
-.tm-recent-cover{height:50px;width:50px;background:#343434;background-position:center;background-size:cover;flex:none}
-.tm-recent-desc{min-width:0;flex:1;display:flex;flex-direction:column}
-.tm-recent-desc strong{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tm-recent-desc small{font:10px var(--mono);color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tm-recent-arrow{font-size:18px;color:var(--yellow);padding:0 6px}
-.tm-share .tm-form{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 12px}
-.tm-form input{background:#fff;color:#090909;font:12px var(--mono);border:1px solid #ccc;padding:10px;min-width:0;flex:1}
-.tm-form .tm-submit,.tm-actions .tm-submit{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border:1px solid #111;background:#111;color:white;font:900 15px var(--display);cursor:pointer}
-.tm-form .tm-submit:hover,.tm-actions .tm-submit:hover{background:#353535}
-.tm-actions{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
-.tm-actions button:disabled{opacity:.45;cursor:not-allowed}
-.tm-shared-name{font-size:22px!important;font-family:var(--display)!important;font-weight:900;line-height:1.1}
-.tm-link{border:0;background:none;color:#111;text-decoration:underline;cursor:pointer;font:700 14px var(--display);padding:0}
-.support-section .tm-share{max-width:620px}
-#prev-slide:disabled,#pause-slide:disabled,#next-slide:disabled,#hero-play:disabled{opacity:.5;cursor:not-allowed}
-.record-info p{overflow:hidden;text-overflow:ellipsis}
-@media(max-width:800px){.tm-strip-owner,.tm-strip-song small{display:none}.tm-player-state span{display:none}.tm-audio-panel{grid-template-columns:65px minmax(0,1fr) auto;gap:9px;padding:11px}.tm-player-art{width:55px;height:55px}.tm-player-copy .eyebrow{font-size:9px}.tm-strip-song{padding:0 7px}}
-@media(max-width:540px){.tm-player-state{min-width:92px}.tm-button{font-size:12px;padding:8px}.tm-strip-song strong{font-size:12px}.tm-recent-art-title{font-size:79px}.tm-history h2{font-size:55px}}
-@media(prefers-reduced-motion:reduce){.tm-recent-art-title{transition:none}}
-.tm-placeholder{display:flex;align-items:flex-end;justify-content:flex-start;padding:18px;background-position:center;background-size:cover}
-.tm-placeholder-title{position:relative;z-index:2;font-weight:900;font-size:clamp(31px,3.1vw,64px);line-height:.83;letter-spacing:-.05em;font-style:italic;text-shadow:2px 3px #090909;max-width:100%;overflow-wrap:anywhere}
-.tm-placeholder.graphic-one{background:radial-gradient(circle at 50% 40%,#fee344 0 15%,#df541b 16% 28%,#1d0e0b 29% 35%,#f15c2a 36% 45%,#180706 47% 75%)}
-.tm-placeholder.graphic-two{background:radial-gradient(circle at 65% 35%,#e5f0f5 0 13%,#28404d 15% 36%,#06151b 37% 65%,#012028 67%)}
-.tm-placeholder.graphic-three{background:repeating-linear-gradient(24deg,#253216 0 11px,#667d3a 11px 21px,#0c170d 21px 30px);filter:saturate(.8)}
-.tm-placeholder.art-focus{background:linear-gradient(55deg,#101213,#292327 43%,#8b5652 44% 50%,#16191c 65%)}
-.tm-recent-items .tm-empty{background:none;padding:12px 0}
-.tm-rail-image{background-size:cover!important;background-position:center!important}
-.toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
-.rail-head .tm-station-button{display:flex;gap:9px;justify-content:space-between;align-items:center;margin-top:12px;padding:8px 9px;border:1px solid var(--yellow);color:#111;background:var(--yellow);font-size:13px;font-weight:900;line-height:1.1}
-.rail-head .tm-station-button:hover{background:white;border-color:white}
-.tm-owner-publish{border:1px solid #242a0d;background:#c2d452;padding:14px;margin:14px 0;color:#1a1a1a}
-.tm-owner-publish[hidden]{display:none}
-.tm-owner-publish p{margin:9px 0 10px!important;font:12px/1.5 Arial,sans-serif!important}
-.tm-owner-publish small{font:10px/1.6 var(--mono);display:block;margin-top:9px}
-.tm-share-label{display:flex;align-items:start;gap:7px;font:10px/1.5 var(--mono);margin:8px 0 13px}
-.tm-share-label input{accent-color:#232905;margin:1px 0}
-.tm-export-button{border:1px solid #222;background:#121212;color:#fff;padding:10px;font-weight:900;font-size:15px;cursor:pointer}
-.tm-export-button:hover{background:#383838}
-.record-image>.record-art{inset:7px 7px 37px 7px;background-size:contain;background-position:center}
-.card-play{bottom:7px;left:8px}
-.record-index{bottom:16px;right:7px}
-.tm-taste-artists{margin:15px 0 23px;padding-top:13px;border-top:1px solid #636363}
-.tm-taste-artists[hidden]{display:none}
-.tm-taste-artists .eyebrow{color:var(--yellow);font:10px var(--mono)}
-#taste-artist-names{display:flex;gap:8px 15px;flex-wrap:wrap;margin-top:9px}
-#taste-artist-names span{font-size:16px;font-weight:800;line-height:1;text-transform:uppercase}
-#taste-artist-names span:before{content:'↗ ';color:var(--yellow)}
-.tm-public-embed{margin:16px 0;border:1px solid #343c21;padding:9px;background:#141812;max-width:570px}
-.tm-public-embed[hidden]{display:none}
-.tm-public-embed iframe{width:100%;height:352px;display:block;border:0;border-radius:8px;background:#191414}
-.tm-shared-name{overflow-wrap:anywhere}
-.tm-spotify-embed{display:grid;grid-template-columns:1fr;gap:11px;background:#111;border-bottom:1px solid #535353;padding:15px 20px 18px}
-.tm-spotify-embed[hidden]{display:none}
-.tm-embed-heading{display:flex;justify-content:space-between;align-items:center;gap:15px}
-.tm-embed-heading button{border:0;background:none;color:#ddd;font-size:20px;cursor:pointer}
-.tm-embed-heading button:hover{color:var(--yellow)}
-#tm-embed-frame iframe{display:block;width:100%;max-width:680px;height:152px;border:0;border-radius:8px;background:#191414}
-.tm-spotify-embed p{font:11px/1.55 var(--mono);color:#a5a5a5;margin:0}
-@media(max-width:720px){.tm-spotify-embed{padding:13px}}
-</style>
-<link rel="stylesheet" href="./spotify-controls.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-taste.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-polish.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-experience.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-reference.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-precision.css?v=20261011nts2">
-<link rel="stylesheet" href="./spotify-nts.css?v=20261011connect1">
-<script defer src="./spotify-auth.js?v=20261011connect2"></script>
-<script defer src="./spotify-editorial.js?v=20261011connect2"></script>
-<script defer src="./spotify-controls.js?v=20261011nts2"></script>
-<script defer src="./spotify-taste.js?v=20261011nts2"></script>
-<script defer src="./spotify-library.js?v=20261011nts2"></script>
-<script defer src="./spotify-polish.js?v=20261011nts2"></script>
-<script defer src="./spotify-artist.js?v=20261011nts2"></script>
-<script defer src="./spotify-mini.js?v=20261011nts2"></script>
-<script defer src="./spotify-favorites.js?v=20261011nts2"></script>
-<script defer src="./spotify-search.js?v=20261011nts2"></script>
-</head>
-<body>
-  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./transmission.css?v=20261012rebuild1">
+  <script defer src="./spotify-auth.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-editorial.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-controls.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-taste.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-library.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-polish.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-artist.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-queue.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-favorites.js?v=20261012rebuild1"></script>
+  <script defer src="./spotify-search.js?v=20261012rebuild1"></script>
+  <script defer src="./transmission-ui.js?v=20261012rebuild1"></script>
+</head><body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
 <header class="site-header" id="top">
   <div class="top-bar">
     <a class="brand" href="#top" aria-label="Transmission — inicio"><span class="brand-mark">T<span class="brand-mark-slash">/</span>M</span></a>
-    <button class="mobile-trigger icon-button" id="menu-toggle" aria-label="Abrir menú" aria-expanded="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 5h18M3 12h18M3 19h18"/></svg></button>
     <nav class="main-nav" id="main-nav" aria-label="Navegación principal">
-      <a class="nav-link is-current" href="#radio">ESCUCHAR</a>
-      <a class="nav-link" href="#latest">EN ROTACIÓN</a>
-      <a class="nav-link" href="#explore">EXPLORAR</a>
-      <a class="nav-link" href="#mixtapes">PLAYLISTS</a>
-      <a class="nav-link" href="#liked">ME GUSTA</a>
-      <a class="nav-link" href="#recent">RECIENTES</a>
-      <a class="support-link" href="#support">COMPARTIR <span aria-hidden="true">↗</span></a>
+      <a class="nav-link is-current" href="#radio">ESCUCHAR</a><a class="nav-link" href="#latest">EN ROTACIÓN</a><a class="nav-link" href="#explore">EXPLORAR</a><a class="nav-link" href="#mixtapes">PLAYLISTS</a><a class="nav-link" href="#liked">ME GUSTA</a><a class="support-link" href="#support">COMPARTIR</a>
     </nav>
     <div class="header-tools">
-      <div class="tm-inline-search" id="tm-inline-search"><button class="header-search icon-button" id="search-trigger" aria-label="Buscar canciones" title="Buscar canciones"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg></button><input id="tm-inline-query" type="search" aria-label="Buscar música" autocomplete="off" placeholder=""><div id="tm-inline-results" class="tm-inline-results" hidden role="region" aria-label="Resultados de búsqueda"></div></div>
-      <span class="tool-divider"></span>
-      <button class="header-account" id="saved-trigger" title="Conectar o desconectar Spotify"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg> <span id="account-name">CONECTAR</span></button>
+      <div class="tm-inline-search" id="tm-inline-search"><button class="header-search icon-button" id="search-trigger" aria-label="Buscar canciones"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg></button><input id="tm-inline-query" type="search" aria-label="Buscar música" autocomplete="off" placeholder=""><div id="tm-inline-results" class="tm-inline-results" hidden role="region" aria-label="Resultados de búsqueda"></div></div>
+      <button class="header-account" id="saved-trigger" title="Conectar Spotify"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg><span id="account-name">CONECTAR</span></button>
+      <button class="mobile-trigger icon-button" id="menu-toggle" aria-label="Abrir menú" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 12h18M3 19h18"/></svg></button>
     </div>
   </div>
   <div class="live-strip" id="radio">
     <div class="live-badge" id="live-label">ESCUCHAR <span class="pulse-dot"></span></div>
-    <div class="tm-strip-song"><strong id="strip-song">EN ESPERA</strong><small id="strip-artist"></small></div>
-    <span class="tm-strip-owner" id="owner-display"></span>
-    <label class="tm-strip-volume" aria-label="Volumen del reproductor">
-      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
-      <input id="tm-strip-volume" type="range" min="0" max="100" value="70" aria-label="Volumen">
-    </label>
-    <button class="strip-control" id="audio-previous" aria-label="Canción anterior">⏮</button>
-    <button class="strip-control" id="audio-toggle" aria-label="Reproducir o pausar">▶</button>
-    <button class="strip-control" id="audio-next" aria-label="Siguiente canción">⏭</button>
+    <div class="tm-current-channel"><button class="strip-control" id="audio-toggle" aria-label="Reproducir o pausar">▶</button><div class="tm-strip-song"><strong id="strip-song">TU MÚSICA</strong><small id="strip-artist"></small></div><span id="owner-display" hidden></span></div>
+    <button class="tm-next-channel" id="tm-up-next" type="button" aria-label="Escuchar mi rotación"><span class="tm-channel-icon" aria-hidden="true">▶</span><strong id="tm-next-song">MI ROTACIÓN</strong><small id="tm-next-artist"></small></button>
+    <div class="tm-strip-tools"><button class="strip-control" id="audio-previous" aria-label="Canción anterior">‹</button><button class="strip-control" id="audio-next" aria-label="Siguiente canción">›</button><label class="tm-strip-volume" aria-label="Volumen del reproductor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8"/></svg><input id="tm-strip-volume" type="range" min="0" max="100" value="70" aria-label="Volumen"></label></div>
   </div>
 </header>
-
-  <main id="main">
-    <section class="lead-layout" aria-label="Música destacada y playlists">
-  <div class="hero-slider" id="hero-slider">
-    <div class="hero-visual" id="hero-visual">
-      <div class="hero-image" id="hero-image"></div><div class="hero-grain" aria-hidden="true"></div>
-      <div class="hero-topline"><span></span><span class="hero-onair" hidden><i></i> ESCUCHANDO</span></div>
-      <div class="hero-caption">
-        <button class="hero-play" id="hero-play" aria-label="Reproducir canción destacada" disabled><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 5v30L34 20z"/></svg></button>
-        <p class="hero-kicker" id="hero-kicker"></p>
-        <h1 class="hero-title" id="hero-title">MI MÚSICA</h1>
-        <p class="hero-description" id="hero-description">Discos, canciones y descubrimientos.</p>
-      </div>
-      <div class="slider-footer">
-        <div class="slider-progress" id="slider-progress" aria-label="Posición del carrusel"><span id="progress-fill"></span></div>
-        <span class="slider-count" id="slider-count">00 / 00</span>
-        <div class="slider-controls">
-          <button id="prev-slide" aria-label="Canción anterior en carrusel">‹</button>
-          <button id="pause-slide" aria-label="Reproducir la canción seleccionada" disabled>▶</button>
-          <button id="next-slide" aria-label="Siguiente canción en carrusel">›</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <aside class="mixtape-rail" id="mixtapes" aria-label="Playlists personales">
-    <div class="rail-head"><div class="rail-heading">MIS<br>LISTAS</div><span class="rail-heading-arrows" aria-hidden="true">↗</span><div class="tm-rail-actions"><button id="tm-station-play" class="tm-station-button" type="button" aria-label="Escuchar mi estación musical">▶ MI ROTACIÓN <span>↗</span></button><button id="tm-now-play" class="tm-now-button" type="button" aria-label="Escuchar según mis gustos recientes"><span>▶ PARA AHORA</span><small id="tm-now-caption">Mi escucha reciente</small></button></div></div>
-    <button class="rail-item" type="button" id="rail-placeholder"><span class="rail-item-cover art-focus">♫</span><span class="rail-item-label">MIS LISTAS <small>COLECCIÓN PERSONAL</small></span><span class="rail-item-arrow">↗</span></button>
-    <button class="rail-all" id="rail-all" type="button">VER TODAS MIS LISTAS <span>↗</span></button>
+<main id="main">
+<section class="lead-layout" aria-label="Música destacada y playlists">
+  <div class="hero-slider" id="hero-slider"><div class="hero-visual" id="hero-visual">
+    <div class="hero-image no-cover" id="hero-image"></div>
+    <div class="hero-topline"><span></span><span class="hero-onair" hidden><i></i> ESCUCHANDO</span></div>
+    <div class="hero-caption"><button class="hero-play" id="hero-play" aria-label="Reproducir canción destacada"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 5v30L34 20z"/></svg></button><div class="hero-caption-plate"><p class="hero-kicker" id="hero-kicker"></p><h1 class="hero-title" id="hero-title">TU MÚSICA</h1><p class="hero-description" id="hero-description"></p></div></div>
+    <div class="slider-footer"><div class="slider-progress" id="slider-progress" aria-label="Posición del carrusel"><span id="progress-fill"></span></div><span class="slider-count" id="slider-count"></span><div class="slider-controls"><button id="prev-slide" aria-label="Canción anterior en carrusel">‹</button><button id="pause-slide" aria-label="Reproducir la canción seleccionada" disabled>▶</button><button id="next-slide" aria-label="Siguiente canción en carrusel">›</button></div></div>
+  </div></div>
+  <aside class="mixtape-rail" id="mixtapes" aria-label="Playlists y selecciones personales">
+    <div class="rail-head"><button id="tm-rail-open" class="tm-rail-open" type="button" aria-label="Abrir todas mis listas">+</button><div class="rail-heading">MIS<br>LISTAS</div><div class="tm-rail-actions"><button id="tm-station-play" type="button">▶ MI ROTACIÓN</button><button id="tm-now-play" type="button"><span>▶ PARA AHORA</span><small id="tm-now-caption" hidden></small></button></div></div>
+    <button class="rail-all" id="rail-all" type="button">VER TODAS MIS LISTAS <span aria-hidden="true">›</span></button>
   </aside>
 </section>
-<section class="tm-audio-panel" id="player" aria-label="Reproductor integrado de Spotify">
-  <div class="tm-player-art" id="player-art">T/M</div>
-  <div class="tm-player-copy">
-    <span class="eyebrow">REPRODUCIENDO</span>
-    <strong id="player-track">SIN REPRODUCCIÓN</strong>
-    <small id="player-artist"></small>
-    <button id="tm-favorite" class="tm-favorite-button" type="button" aria-label="Guardar canción en Me gusta" title="Guardar canción" disabled>♡</button>
-    <div class="tm-timeline">
-      <span id="tm-elapsed" aria-label="Posición actual">0:00</span>
-      <input id="tm-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Avanzar dentro de la canción" disabled>
-      <span id="tm-duration" aria-label="Duración total">0:00</span>
-    </div>
-  </div>
-  <div class="tm-play-controls" aria-label="Controles de reproducción">
-    <button class="tm-control" type="button" id="tm-prev" aria-label="Canción anterior" title="Anterior"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m19 5-9 7 9 7V5ZM5 5v14"/></svg></button>
-    <button class="tm-control tm-control-primary" type="button" id="tm-play" aria-label="Reproducir" title="Reproducir"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m9 5 12 7-12 7V5Z" fill="currentColor" stroke="none"/></svg></button>
-    <button class="tm-control" type="button" id="tm-next" aria-label="Canción siguiente" title="Siguiente"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m5 5 9 7-9 7V5Zm14 0v14"/></svg></button>
-  </div>
-  <div class="tm-play-settings">
-    <label class="tm-volume" title="Volumen del navegador"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg><input id="tm-volume" type="range" min="0" max="100" value="70" step="1" aria-label="Volumen" disabled></label>
-    <button class="tm-control tm-options-trigger" id="tm-more" type="button" aria-label="Más opciones" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg></button>
-    <div class="tm-player-popover" id="tm-options" hidden>
-      <div class="tm-popover-heading">AUDIO</div>
-      <div class="tm-popover-row">
-        <button id="tm-shuffle" class="tm-opt-button" type="button" aria-pressed="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m4 7 3 0c7 0 4 10 13 10m-4-4 4 4-4 4M4 17h3c7 0 4-10 13-10m-4-4 4 4-4 4"/></svg> ALEATORIO</button>
-        <button id="tm-repeat" class="tm-opt-button" type="button" aria-pressed="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m17 2 3 3-3 3M4 11V8a3 3 0 0 1 3-3h13M7 22l-3-3 3-3m13-3v3a3 3 0 0 1-3 3H4"/></svg> REPETIR</button>
-      </div>
-      <div class="tm-popover-row">
-        <button id="tm-queue-button" class="tm-opt-button" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M3 6h2M3 12h2M3 18h2"/></svg> COLA</button>
-        <button id="tm-devices-button" class="tm-opt-button" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.4"/><path d="M8 21h8m-4-4v4"/></svg> DISPOSITIVOS</button>
-      </div>
-      <a id="tm-lyrics-button" class="tm-opt-button" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" title="Las letras oficiales se consultan dentro de Spotify">VER LETRAS EN SPOTIFY ↗</a>
-      <button id="tm-diagnostics" class="tm-opt-button" type="button">DIAGNÓSTICO DEL REPRODUCTOR ↗</button>
-      <div class="tm-popover-content" id="tm-popover-content" role="status"></div>
-    </div>
-  </div>
-  <div class="tm-player-state">
-    <span id="player-device">WEB PLAYER / DESCONECTADO</span>
-    <button id="connect-button" class="tm-button" type="button">CONECTAR</button>
-  </div>
-</section>
-<div id="spotify-status" hidden aria-hidden="true"></div>
 <section id="tm-spotify-embed" class="tm-spotify-embed" hidden aria-label="Reproductor oficial de Spotify">
   <div class="tm-embed-heading"><span class="eyebrow">REPRODUCTOR</span>
     <button id="tm-embed-close" type="button" aria-label="Cerrar reproductor oficial">✕</button></div>
   <div id="tm-embed-frame"></div>
   
 </section>
-
-    <section class="catalog-section" id="latest">
+<section class="catalog-section" id="latest">
   <div class="section-heading">
-    <div><span class="eyebrow" id="pick-period">ÚLTIMAS SEMANAS</span><h2>EN ROTACIÓN <span class="heading-indicator tm-spin-symbol">✳</span></h2></div>
+    <div><span class="eyebrow" id="pick-period" hidden></span><h2>EN ROTACIÓN <span class="heading-indicator tm-spin-symbol">✳</span></h2></div>
     <button class="view-all" id="top-refresh" type="button">OTRAS CANCIONES <span>↗</span></button>
   </div>
   <div class="picks-grid" id="picks-grid" aria-label="Canciones más escuchadas"></div>
 </section>
-
-    <section class="discover-panel" id="explore">
-  <div class="discover-copy">
-    
-    <h2>EVERY<br>FREQUENCY<br>HAS A STORY<span class="heading-period">.</span></h2>
-    <p>Artistas que regresan. Canciones que permanecen. Lo que escucho y lo que descubro.</p>
-    <div id="taste-artists" class="tm-taste-artists" hidden><div id="taste-artist-names"></div></div>
-    <a class="outline-cta" href="#liked">EXPLORAR MIS FAVORITAS <span>↗</span></a>
-  </div>
-  <div class="discover-art" role="img" aria-label="Composición abstracta de discos y ondas">
-    <div class="circles circle-a"></div><div class="circles circle-b"></div><div class="circles circle-c"></div>
-    <div class="disc-mark">T/M</div><div class="crosshair">✳</div>
-  </div>
-</section>
-
-    <section class="catalog-section tm-liked-section" id="liked" aria-label="Canciones guardadas">
+<section class="catalog-section tm-liked-section" id="liked" aria-label="Canciones guardadas">
   <div class="section-heading">
     <div><span class="eyebrow" id="liked-kicker" hidden></span><h2>ME GUSTA</h2></div>
     <div class="tm-liked-actions">
@@ -293,89 +80,81 @@
   </div>
   <div class="tm-liked-grid" id="tm-liked-grid" aria-live="polite"></div>
 </section>
+<section class="discover-panel" id="explore">
+  <div id="tm-artist-backdrop" class="tm-artist-backdrop" aria-hidden="true"></div>
+  <div class="discover-copy"><h2>ENCUENTRA TU<br>PRÓXIMA FRECUENCIA.</h2><div id="taste-artists" class="tm-taste-artists" hidden><div id="taste-artist-names"></div></div><button id="tm-explore-artists" class="light-cta" type="button">EXPLORAR ARTISTAS</button></div>
+</section>
 <section class="catalog-section collection-section" id="collections">
-  <div class="section-heading"><div><h2>COLECCIONES <span class="heading-indicator">↗</span></h2></div><button class="view-all" id="random-discovery" type="button">SORPRÉNDEME <span>↗</span></button></div>
+  <div class="section-heading"><h2>COLECCIONES</h2><button class="view-all" id="random-discovery" type="button">SORPRÉNDEME <span aria-hidden="true">›</span></button></div>
   <div class="collection-grid">
-    <button class="collection-tile" id="collection-top" type="button">
-      <span class="collection-art collection-art-one"><span class="distortion-title">TOP<br>TRACKS</span><span class="distortion-coord">ESTAS SEMANAS</span></span>
-      <span class="collection-caption"><b>EN ROTACIÓN</b><span id="collection-count-1"></span></span>
-    </button>
-    <button class="collection-tile" id="collection-playlists" type="button">
-      <span class="collection-art collection-art-two"><span class="sun-disc"></span><strong>MIS<br>LISTAS</strong><span class="tiny-invert">SELECCIONES</span></span>
-      <span class="collection-caption"><b>MIS LISTAS</b><span id="collection-count-2"></span></span>
-    </button>
-    <button class="collection-tile" id="collection-liked" type="button">
-      <span class="collection-art collection-art-three"><span class="pixel-cloud">░▒▓▒░<br>▒░▓░▒<br>▓▒░▒▓</span><strong>ME<br>GUSTA</strong><small>GUARDADAS</small></span>
-      <span class="collection-caption"><b>ME GUSTA</b><span id="collection-count-3"></span></span>
-    </button>
+    <button class="collection-tile" id="collection-top" type="button"><span class="collection-art" id="tm-collection-art-1" aria-hidden="true"></span><span class="collection-caption"><b>EN ROTACIÓN</b><span id="collection-count-1"></span></span></button>
+    <button class="collection-tile" id="collection-playlists" type="button"><span class="collection-art" id="tm-collection-art-2" aria-hidden="true"></span><span class="collection-caption"><b>MIS LISTAS</b><span id="collection-count-2"></span></span></button>
+    <button class="collection-tile" id="collection-liked" type="button"><span class="collection-art" id="tm-collection-art-3" aria-hidden="true"></span><span class="collection-caption"><b>ME GUSTA</b><span id="collection-count-3"></span></span></button>
   </div>
 </section>
-
-    <section class="marquee-band" aria-label="Identidad visual"><div class="marquee-inner" aria-hidden="true"><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span></div></section>
-
-    <section class="studio-block" id="recent">
-  <div class="studio-image tm-recent-panel">
-    <span class="studio-img tm-studio-gradient" aria-hidden="true"></span>
-    <span class="studio-sticker">ÚLTIMAS<br>ESCUCHAS</span>
-    <span class="tm-recent-art-title">AFTER<br>HOURS<span>✳</span></span>
-  </div>
-  <div class="studio-content tm-history">
-    <span class="eyebrow" id="recent-label" hidden></span><h2>DESPUÉS<br>DE<br>SONAR.</h2>
-    <div id="recent-items" class="tm-recent-items" aria-label="Tus últimas reproducciones"></div>
-  </div>
-</section>
-
-    <section class="support-section" id="support">
-  
-  <div class="support-flex">
-    <h2>LISTEN<br>TOGETHER.</h2>
-    <div class="tm-share">
-      
-      <form id="shared-form" class="tm-form">
+<section class="marquee-band" aria-label="Identidad visual"><div class="marquee-inner" aria-hidden="true"><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span><span class="tm-ticker-cycle"><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MY FREQUENCY</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">MUSIC THAT STAYS</span><span class="tm-ticker-star">✳</span><span class="tm-ticker-copy">NO FIXED GENRE</span><span class="tm-ticker-star">✳</span></span></div></section>
+<section class="catalog-section studio-block" id="recent"><div class="section-heading"><h2>ÚLTIMAS ESCUCHAS</h2><a class="view-all" href="#liked">VER FAVORITAS <span aria-hidden="true">›</span></a><span id="recent-label" hidden></span></div><div id="recent-items" class="tm-recent-items" aria-label="Tus últimas reproducciones"></div></section>
+</main>
+<footer class="footer" id="support">
+  <div class="footer-main"><div class="footer-links"><h2>TRANSMISSION</h2><a href="#latest">En rotación</a><a href="#mixtapes">Mis listas</a><a href="#liked">Me gusta</a><a href="#recent">Últimas escuchas</a><a href="#collections">Colecciones</a><a href="#top">Volver arriba</a><h2 class="footer-spotify-title">CONTINÚA ESCUCHANDO</h2><a id="tm-open-spotify" class="spotify-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">ABRIR EN SPOTIFY ↗</a><button id="reconnect-button" class="tm-link" type="button">CONECTAR SPOTIFY</button></div>
+    <div class="footer-share"><h2>LISTEN TOGETHER.</h2><form id="shared-form" class="tm-form">
         <input id="shared-link" type="url" placeholder="https://open.spotify.com/playlist/..." aria-label="URL de playlist" required>
-        <button class="light-cta tm-submit" type="submit">CARGAR PLAYLIST ↗</button>
+        <button class="light-cta tm-submit" type="submit">CARGAR PLAYLIST</button>
       </form>
       <div id="shared-info" class="eyebrow"></div>
       <p id="shared-name" class="tm-shared-name"></p>
       <div id="tm-public-embed" class="tm-public-embed" hidden aria-label="Playlist de Spotify integrada"></div>
       <div class="tm-actions">
-        <button id="shared-button" class="light-cta tm-submit" disabled type="button">▶ PLAY HERE</button>
-        <button id="shared-share" class="light-cta tm-submit" type="button">COPIAR ENLACE ↗</button>
+        <button id="shared-button" class="light-cta tm-submit" disabled type="button">▶ ESCUCHAR</button>
+        <button id="shared-share" class="light-cta tm-submit" type="button">COPIAR ENLACE</button>
       </div>
-      <div id="owner-public-export" class="tm-owner-publish" hidden>
-  <span class="eyebrow">PUBLICAR SELECCIÓN</span>
-  <p>Preparar una selección pública de mis canciones y playlists. No se publican contraseñas ni autorizaciones de Spotify.</p>
-  <label class="tm-share-label"><input id="tm-share-recent" type="checkbox"> Incluir también mis últimas escuchas en la portada pública</label>
-  <label class="tm-share-label"><input id="tm-share-liked" type="checkbox"> Incluir mis canciones guardadas en esta selección pública</label>
-  <button id="tm-export-public" class="tm-export-button" type="button">PREPARAR PORTADA PÚBLICA ↗</button>
-  <small>Se descargará <code>featured.json</code>. Adjunta ese archivo al chat para publicarlo en esta misma web.</small>
-</div>
-<button id="reconnect-button" class="tm-link" type="button">CONECTAR / DESCONECTAR SPOTIFY ↗</button>
+</div></div>
+  <div class="footer-signature"><a class="brand-mark" href="#top" aria-label="Transmission — inicio">T<span class="brand-mark-slash">/</span>M</a><p>AN OPEN CHANNEL<br>FOR PERSONAL MUSIC.</p></div><div class="footer-bottom"><span>© 2026 TRANSMISSION</span><span>HECHO PARA ESCUCHAR</span></div>
+</footer>
+<section class="tm-audio-panel" id="player" aria-label="Reproductor integrado de Spotify">
+  <div class="tm-player-art" id="player-art">T/M</div>
+  <div class="tm-player-copy">
+    <strong id="player-track">TU MÚSICA</strong>
+    <small id="player-artist"></small>
+    <button id="tm-favorite" class="tm-favorite-button" type="button" aria-label="Guardar canción en Me gusta" title="Guardar canción" disabled>♡</button>
+    <div class="tm-timeline">
+      <span id="tm-elapsed" aria-label="Posición actual">0:00</span>
+      <input id="tm-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Avanzar dentro de la canción" disabled>
+      <span id="tm-duration" aria-label="Duración total">0:00</span>
     </div>
   </div>
+  <div class="tm-play-controls" aria-label="Controles de reproducción">
+    <button class="tm-control" type="button" id="tm-prev" aria-label="Canción anterior" title="Anterior"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m19 5-9 7 9 7V5ZM5 5v14"/></svg></button>
+    <button class="tm-control tm-control-primary" type="button" id="tm-play" aria-label="Reproducir" title="Reproducir"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m9 5 12 7-12 7V5Z" fill="currentColor" stroke="none"/></svg></button>
+    <button class="tm-control" type="button" id="tm-next" aria-label="Canción siguiente" title="Siguiente"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m5 5 9 7-9 7V5Zm14 0v14"/></svg></button>
+  </div>
+  <button id="tm-mini-queue" class="tm-control tm-queue-trigger" type="button" aria-label="Ver cola de reproducción" aria-expanded="false" title="Cola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></svg></button>
+  <button id="tm-mini-share" class="tm-control tm-share-trigger" type="button" aria-label="Compartir canción" title="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h10m-4-4 4 4-4 4M5 5v14"/></svg></button>
+  <div class="tm-play-settings">
+    <label class="tm-volume" title="Volumen del navegador"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg><input id="tm-volume" type="range" min="0" max="100" value="70" step="1" aria-label="Volumen" disabled></label>
+    <button class="tm-control tm-options-trigger" id="tm-more" type="button" aria-label="Más opciones" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg></button>
+    <div class="tm-player-popover" id="tm-options" hidden>
+      <div class="tm-popover-heading">AUDIO</div>
+      <div class="tm-popover-row">
+        <button id="tm-shuffle" class="tm-opt-button" type="button" aria-pressed="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m4 7 3 0c7 0 4 10 13 10m-4-4 4 4-4 4M4 17h3c7 0 4-10 13-10m-4-4 4 4-4 4"/></svg> ALEATORIO</button>
+        <button id="tm-repeat" class="tm-opt-button" type="button" aria-pressed="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m17 2 3 3-3 3M4 11V8a3 3 0 0 1 3-3h13M7 22l-3-3 3-3m13-3v3a3 3 0 0 1-3 3H4"/></svg> REPETIR</button>
+      </div>
+      <div class="tm-popover-row">
+        <button id="tm-queue-button" class="tm-opt-button" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M3 6h2M3 12h2M3 18h2"/></svg> COLA</button>
+        <button id="tm-devices-button" class="tm-opt-button" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.4"/><path d="M8 21h8m-4-4v4"/></svg> DISPOSITIVOS</button>
+      </div>
+      <a id="tm-lyrics-button" class="tm-opt-button" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" title="Las letras oficiales se consultan dentro de Spotify">VER LETRAS EN SPOTIFY ↗</a>
+      <button id="tm-diagnostics" class="tm-opt-button" type="button">DIAGNÓSTICO DEL REPRODUCTOR ↗</button>
+      <button id="tm-open-publish" class="tm-opt-button" type="button" hidden>PREPARAR SELECCIÓN PÚBLICA ↗</button>
+      <div class="tm-popover-content" id="tm-popover-content" role="status"></div>
+    </div>
+  </div>
+  <div class="tm-player-state">
+    <span id="player-device">WEB PLAYER / DESCONECTADO</span>
+    <button id="connect-button" class="tm-button" type="button">CONECTAR</button>
+  </div>
 </section>
-
-  </main>
-  <footer class="footer">
-  <div class="footer-main">
-    <div><div class="footer-logo">T/M<span>✳</span></div><p>AN OPEN CHANNEL<br>FOR PERSONAL MUSIC.</p></div>
-    <div><span class="footer-title">LISTEN</span><a href="#radio">SPOTIFY PLAYER</a><a href="#latest">IN ROTATION</a><a href="#mixtapes">PLAYLISTS</a><a href="#recent">RECENT LISTENS</a></div>
-    <div><span class="footer-title">COLLECTIONS</span><a href="#collections">THE ARCHIVE</a><a href="#support">SHARE A PLAYLIST</a><a href="#top">BACK TO TOP</a><span class="footer-note">INDEPENDENT / NON-AFFILIATED</span></div>
-    <div class="footer-news" aria-hidden="true"></div>
-  </div>
-  <div class="footer-bottom"><span>© 2026 TRANSMISSION</span><span>HECHO PARA ESCUCHAR <span class="pulse-dot"></span></span></div>
-</footer>
-
-  <div class="overlay" id="search-overlay" aria-hidden="true">
-  <div class="overlay-panel search-panel" role="dialog" aria-modal="true" aria-labelledby="search-title">
-    <button class="close-overlay" data-close aria-label="Cerrar">✕</button>
-    <span class="eyebrow">BUSCAR MÚSICA</span>
-    <h2 id="search-title">WHAT ARE YOU<br>LOOKING FOR?</h2>
-    <label class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg><input id="search-input" type="search" placeholder="ARTISTS, TRACKS, ALBUMS..." autocomplete="off" aria-label="Buscar Spotify"></label>
-    <div class="search-results" id="search-results" role="status"></div>
-  </div>
-</div>
-
+<div id="spotify-status" hidden aria-hidden="true"></div>
 <div class="tm-library-screen" id="tm-library-screen" hidden aria-hidden="true">
  <div class="tm-library-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-library-title">
    <header class="tm-library-header"><div><h2 id="tm-library-title">MIS LISTAS</h2><p id="tm-library-count"></p></div><button id="tm-library-close" type="button" aria-label="Cerrar listas">✕</button></header>
@@ -404,7 +183,7 @@
    <div class="tm-library-bottom" id="tm-library-bottom"><button id="tm-library-more" type="button" hidden>CARGAR MÁS ↗</button><p id="tm-library-feedback" role="status"></p></div>
  </div>
 </div>
-  <div class="tm-liked-modal" id="tm-liked-modal" hidden>
+<div class="tm-liked-modal" id="tm-liked-modal" hidden>
  <div class="tm-liked-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-liked-dialog-title">
   <header class="tm-liked-dialog-head"><h2 id="tm-liked-dialog-title">ME GUSTA</h2><button id="tm-liked-close" aria-label="Cerrar favoritas" type="button">✕</button></header>
   <div class="tm-liked-toolbar"><label class="tm-liked-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg><input id="tm-liked-search" type="search" aria-label="Buscar en canciones guardadas" placeholder="" autocomplete="off"></label><select id="tm-liked-sort" aria-label="Orden de canciones guardadas"><option value="new">RECIENTES</option><option value="old">ANTIGUAS</option><option value="az">A–Z</option><option value="artist">ARTISTA</option></select><span id="tm-liked-total"></span></div>
@@ -420,22 +199,6 @@
  </div>
 </div>
 <div id="tm-mini-queue-panel" class="tm-mini-queue-panel" hidden aria-label="Cola actual"><div class="tm-mini-queue-top"><strong>COLA</strong><button type="button" id="tm-mini-queue-close" aria-label="Cerrar cola">✕</button></div><div id="tm-mini-queue-tracks" class="tm-mini-queue-tracks"></div></div>
-<div id="tm-mini-player" class="tm-mini-player" hidden aria-label="Reproductor compacto">
- <div id="tm-mini-cover" class="tm-mini-cover"></div>
- <div class="tm-mini-copy"><strong id="tm-mini-title"></strong><small id="tm-mini-artist"></small></div>
- <button id="tm-mini-prev" type="button" aria-label="Anterior canción" title="Anterior">‹</button>
- <button id="tm-mini-toggle" type="button" aria-label="Pausar o reanudar">▶</button>
- <button id="tm-mini-next" type="button" aria-label="Siguiente canción" title="Siguiente">›</button>
- <span id="tm-mini-elapsed" class="tm-mini-time">0:00</span>
- <input id="tm-mini-seek" type="range" min="0" max="1000" value="0" aria-label="Avanzar canción" disabled>
- <span id="tm-mini-duration" class="tm-mini-time">0:00</span>
- <button id="tm-mini-queue" type="button" aria-label="Ver cola de reproducción" title="Cola">≡</button>
- <button id="tm-mini-share" type="button" aria-label="Compartir canción" title="Compartir"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 12h10m-4-4 4 4-4 4M5 5v14"/></svg></button>
- <button id="tm-mini-favorite" type="button" aria-label="Guardar en Me gusta" title="Me gusta" disabled>♡</button>
- <label class="tm-mini-volume" aria-label="Volumen"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" stroke="currentColor" fill="none" stroke-width="1.5"/></svg><input id="tm-mini-volume" type="range" min="0" max="100" value="70" aria-label="Volumen del reproductor"></label>
-</div>
-
+<div id="owner-public-export" class="tm-publish-modal" hidden><div class="tm-publish-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-publish-title"><header><h2 id="tm-publish-title">SELECCIÓN PÚBLICA</h2><button id="tm-publish-close" type="button" aria-label="Cerrar selección pública">✕</button></header><label class="tm-share-label"><input id="tm-share-recent" type="checkbox"> Incluir últimas escuchas</label><label class="tm-share-label"><input id="tm-share-liked" type="checkbox"> Incluir canciones guardadas</label><button id="tm-export-public" class="light-cta" type="button">DESCARGAR SELECCIÓN</button></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-</body>
-</html>
+</body></html>
