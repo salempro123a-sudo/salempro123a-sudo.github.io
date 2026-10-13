@@ -31,8 +31,8 @@ function banner(message,duration=3200){status(message);const toast=$('toast');if
 function connectionMessage(){
   const block=sp.cooldown||connectionError;
   if(block?.status===429||block?.retryAt){
-    const when=block.retryAt?new Date(block.retryAt).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'más tarde';
-    return 'Tu cuenta ya está autorizada. Spotify ha limitado temporalmente el acceso de esta aplicación. Puedes reintentar '+when+'.';
+    const when=block.retryAt&&block.resetKnown===true?new Date(block.retryAt).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'más tarde';
+    return 'Tu cuenta ya está autorizada. Spotify ha limitado temporalmente el acceso de esta aplicación. Puedes reintentar '+when.replace(/\.$/,'')+'.';
   }
   return connectionError?.message||'No se pudo completar la conexión. Inténtalo de nuevo.';
 }

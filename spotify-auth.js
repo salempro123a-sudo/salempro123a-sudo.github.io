@@ -12,20 +12,35 @@
   const PKCE='transmission_spotify_pkce_v1';
   const COOLDOWN=KEY+'_cooldown_'+CONFIG.clientId;
   let refreshing=null;
+  let serverCooldown=null;
+  // A public maintenance window contains only availability, never account data.
+  // It expires automatically and supplies Retry-After when CORS hides that header.
+  const cooldownReady=fetch('./spotify-status.json',{cache:'no-store'}).then(async response=>{
+    if(!response.ok)return;
+    const value=await response.json();
+    const until=Date.parse(value.retry_at||'');
+    if(value.client_id===CONFIG.clientId&&value.reason==='QUOTA_EXCEEDED'&&Number.isFinite(until)&&until>Date.now()){
+      serverCooldown={reason:value.reason,retryAt:until,resetKnown:true};
+    }
+  }).catch(()=>{});
   function readCooldown(){
+    let stored=null;
     try{
       const value=JSON.parse(localStorage.getItem(COOLDOWN)||'null');
-      if(value?.retryAt>Date.now())return value;
-      localStorage.removeItem(COOLDOWN);
+      if(value?.retryAt>Date.now())stored=value;
+      else localStorage.removeItem(COOLDOWN);
     }catch{}
-    return null;
+    if(serverCooldown?.retryAt>Date.now()&&(!stored||serverCooldown.retryAt>stored.retryAt))return serverCooldown;
+    return stored;
   }
-  function retryAt(response){
+  function retryWindow(response,reason){
     const value=response.headers?.get?.('Retry-After');
     const seconds=Number(value);
-    if(value&&Number.isFinite(seconds)&&seconds>=0)return Date.now()+Math.max(1,seconds)*1000;
+    if(value&&Number.isFinite(seconds)&&seconds>=0)return {retryAt:Date.now()+Math.max(1,seconds)*1000,resetKnown:true};
     const date=value?Date.parse(value):NaN;
-    return Number.isFinite(date)&&date>Date.now()?date:Date.now()+60000;
+    if(Number.isFinite(date)&&date>Date.now())return {retryAt:date,resetKnown:true};
+    // This is request backoff, not a claim that Spotify's quota resets then.
+    return {retryAt:Date.now()+(reason==='QUOTA_EXCEEDED'?900000:60000),resetKnown:false};
   }
   function quotaError(block){
     const error=new SpotifyError(429,block.reason==='QUOTA_EXCEEDED'
@@ -33,6 +48,7 @@
       :'Spotify limitó temporalmente las solicitudes.');
     error.reason=block.reason;
     error.retryAt=block.retryAt;
+    error.resetKnown=block.resetKnown===true;
     return error;
   }
   const tokenStore={
@@ -134,7 +150,7 @@
           throw new Error('Spotify terminó tu sesión. Conecta de nuevo tu cuenta para continuar.');
         }
         const error=new SpotifyError(res.status,'Spotify no pudo renovar la sesión en este momento. Tu autorización se conserva.');
-        if(res.status===429)error.retryAt=retryAt(res);
+        if(res.status===429)Object.assign(error,retryWindow(res));
         throw error;
       }
       return saveToken(result,saved.refresh).access;
@@ -150,6 +166,7 @@
     constructor(code,message){super(message);this.status=code;this.name='SpotifyError'}
   }
   async function api(path,options={},retry=true){
+    await cooldownReady;
     const block=readCooldown();
     if(block)throw quotaError(block);
     const access=await getToken();
@@ -182,7 +199,8 @@
     if(!res.ok){
       const reason=data?.error?.reason||data?.error?.message||'';
       if(res.status===429){
-        const block={reason:data?.error?.reason||'RATE_LIMITED',retryAt:retryAt(res)};
+        const reason=data?.error?.reason||'RATE_LIMITED';
+        const block={reason,...retryWindow(res,reason)};
         try{localStorage.setItem(COOLDOWN,JSON.stringify(block))}catch{}
         throw quotaError(block);
       }
