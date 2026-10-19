@@ -1,68 +1,39 @@
-/* TRANSMISSION / instant header search with actual Spotify catalog results. */
+/* Header search: quick songs, Enter to browse the full catalog. */
 (function(){
 'use strict';
-const sp=window.TransmissionSpotify,rt=window.TransmissionRuntime;
-if(!sp||!rt)return;
-const $=id=>document.getElementById(id);
-const host=$('tm-inline-search'),field=$('tm-inline-query'),results=$('tm-inline-results'),trigger=$('search-trigger');
-if(!host||!field||!results||!trigger)return;
-let debounce=null,request=0,open=false;
-const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
-const img=u=>u?.startsWith('https://i.scdn.co/')?u:'';
-function expand(){
- open=true;host.classList.add('tm-search-open');host.setAttribute('aria-expanded','true');field.focus();
- if(field.value.trim().length>=2)results.hidden=false;
-}
-function collapse(){
- open=false;request++;clearTimeout(debounce);host.classList.remove('tm-search-open');host.setAttribute('aria-expanded','false');results.hidden=true;
-}
-async function lookup(query){
- if(!open)return;
- const current=++request;
- results.replaceChildren();
- results.hidden=false;
- if(!rt.account){
-   results.append(make('p','tm-search-message','Conecta Spotify para buscar en el catálogo.'));
-   return
- }
- const wait=make('p','tm-search-message','BUSCANDO…');results.append(wait);
+const sp=window.TransmissionSpotify,rt=window.TransmissionRuntime,ui=window.TransmissionTrackActions;
+if(!sp||!rt||!ui)return;
+const $=id=>document.getElementById(id),host=$('tm-inline-search'),field=$('tm-inline-query'),results=$('tm-inline-results'),trigger=$('search-trigger');
+let timer=null,serial=0,opened=false;
+function collapse(){opened=false;++serial;clearTimeout(timer);host.classList.remove('tm-search-open');trigger.setAttribute('aria-expanded','false');results.hidden=true}
+function browse(){collapse();window.TransmissionCatalog?.search(field.value.trim())}
+function footer(){const button=document.createElement('button');button.type='button';button.className='tm-search-all';button.textContent=field.value.trim()?'VER TODOS LOS RESULTADOS ↗':'EXPLORAR EL CATÁLOGO ↗';button.onclick=browse;results.append(button)}
+function message(text){const node=document.createElement('p');node.className='tm-search-message';node.textContent=text;results.append(node)}
+async function lookup(){
+ if(!opened)return;const seq=++serial,query=field.value.trim();results.hidden=false;results.replaceChildren();
+ if(query.length<2){footer();return}
+ if(!rt.account){message('Conecta Spotify para buscar música.');footer();return}
+ message('BUSCANDO…');
  try{
-   const endpoint='/search?'+new URLSearchParams({q:query,type:'track',limit:10});
-   const data=await sp.api(endpoint);
-   if(!open||current!==request||field.value.trim()!==query)return;
-   results.replaceChildren();
-   const tracks=(data?.tracks?.items||[]).filter(t=>t?.id&&t?.type==='track');
-   for(const [index,t] of tracks.entries()){
-     const button=make('button','tm-search-result');button.type='button';
-     const cover=make('span','tm-search-cover'),art=img(t.album?.images?.[0]?.url);
-     if(art)cover.style.backgroundImage='url("'+art+'")';
-     const label=make('span','tm-search-copy'),title=make('strong','',t.name||'');
-     label.append(title,make('small','',(t.artists||[]).map(a=>a.name).join(', ')));
-     button.append(cover,label,make('span','tm-search-play','▶'));
-     button.onclick=()=>{collapse();rt.player?.activateElement?.();void rt.playSequence(tracks,index)};
-     results.append(button);
-   }
-   if(!tracks.length)results.append(make('p','tm-search-message','Sin resultados.'));
- }catch(error){
-   if(current!==request)return;
-   results.replaceChildren(make('p','tm-search-message','No fue posible buscar en Spotify.'));
-   rt.status('Búsqueda: '+error.message,true);
- }
+   const data=await sp.api('/search?'+new URLSearchParams({q:query,type:'track',limit:'10'}));
+   if(seq!==serial||!opened||field.value.trim()!==query)return;
+   results.replaceChildren();const tracks=(data?.tracks?.items||[]).filter(track=>track?.id&&track.type==='track');
+   tracks.slice(0,5).forEach((track,index)=>results.append(ui.row(track,{tracks,index,onPlay:()=>rt.playSequence(tracks,index)})));
+   if(!tracks.length)message('Sin resultados.');footer();
+ }catch(error){if(seq!==serial||!opened)return;results.replaceChildren();message('No fue posible buscar. Inténtalo de nuevo.');footer();rt.status('Búsqueda: '+error.message,true)}
 }
-trigger.onclick=()=>{
- if(!open)expand();else field.focus();
-};
+function expand(){
+ if(window.TransmissionCatalog?.isOpen){window.TransmissionCatalog.search(field.value.trim());return}
+ const changed=!opened;opened=true;host.classList.add('tm-search-open');trigger.setAttribute('aria-expanded','true');field.focus();if(changed)void lookup();
+}
+trigger.setAttribute('aria-controls','tm-inline-results');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-label','Buscar música');trigger.onclick=expand;
 field.addEventListener('focus',expand);
-field.addEventListener('input',()=>{
- clearTimeout(debounce);
- const query=field.value.trim();
- if(query.length<2){request++;results.hidden=true;results.replaceChildren();return}
- debounce=setTimeout(()=>void lookup(query),330);
-});
-document.addEventListener('pointerdown',e=>{if(!host.contains(e.target))collapse()});
-document.addEventListener('keydown',e=>{
- if(e.key==='Escape'&&open){collapse();field.blur()}
- if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.target?.closest?.('input, textarea, [contenteditable="true"]')){e.preventDefault();expand()}
+field.addEventListener('input',()=>{++serial;clearTimeout(timer);if(field.value.trim().length<2)void lookup();else timer=setTimeout(()=>void lookup(),330)});
+field.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();browse()}else if(event.key==='ArrowDown'){event.preventDefault();results.querySelector('button:not(:disabled)')?.focus()}});
+document.addEventListener('pointerdown',event=>{if(!host.contains(event.target))collapse()});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&opened){collapse();field.blur()}
+ if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!event.target?.closest?.('input,textarea,select,[contenteditable="true"]')){event.preventDefault();if(window.TransmissionCatalog?.isOpen)$('tm-catalog-query').focus();else expand()}
 });
 window.TransmissionSearch={focus:expand,close:collapse};
 })();

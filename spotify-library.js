@@ -42,11 +42,13 @@ function open(event){
  lastFocus=event?.currentTarget||document.activeElement;
  if(!items.length){add(rt.playlists||rt.publicSnapshot?.playlists||[]);offset=items.length;total=items.length;next=!!rt.account&&items.length>=50}
  shell.hidden=false;shell.setAttribute('aria-hidden','false');
+ window.TransmissionUI?.syncViews?.();
  browsing(true);render();search.focus();
 }
 function close(){
  requestSerial++;
  shell.hidden=true;shell.setAttribute('aria-hidden','true');
+ window.TransmissionUI?.syncViews?.();
  lastFocus?.focus?.();
 }
 async function loadMore(){
@@ -90,6 +92,9 @@ function renderTracks(){
  const panel=$('tm-playlist-tracks');panel.replaceChildren();
  for(const row of trackRows){
    const t=row.track;
+   if(window.TransmissionTrackActions){
+     panel.append(window.TransmissionTrackActions.row(t,{number:row.position+1,onPlay:()=>rt.playPlaylistAt(active,row.position)}));continue;
+   }
    const btn=create('button','tm-playlist-track');btn.type='button';
    btn.setAttribute('aria-label','Reproducir '+t.name);
    const num=create('span','tm-playlist-track-index',String(row.position+1).padStart(2,'0'));

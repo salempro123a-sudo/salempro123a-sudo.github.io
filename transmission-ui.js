@@ -45,6 +45,7 @@ function refresh(){
 $('tm-up-next').onclick=()=>!rt.account?$('saved-trigger').click():rt.upcomingTrack?$('tm-next').click():$('tm-station-play').click();
 $('tm-rail-open').onclick=()=>window.TransmissionLibrary?.open?.();
 $('tm-explore-artists').onclick=()=>{
+ if(window.TransmissionCatalog){window.TransmissionCatalog.open();return}
  const artists=rt.accountArtists;
  if(artists?.length){const artist=artists[Math.floor(Math.random()*artists.length)];window.TransmissionArtist?.open?.(artist.name)}
  else if(rt.account)window.TransmissionSearch?.focus?.();
@@ -69,6 +70,11 @@ document.addEventListener('keydown',event=>{
  else if(!event.shiftKey&&(document.activeElement===last||!dialog.contains(document.activeElement))){event.preventDefault();first.focus()}
 });
 document.querySelectorAll('#main-nav a').forEach(link=>link.addEventListener('click',()=>{$('menu-toggle').setAttribute('aria-expanded','false')}));
-window.TransmissionUI={refresh};
+function syncViews(){
+ const browsing=!!document.querySelector('.tm-catalog:not([hidden]),.tm-library-screen:not([hidden]),.tm-liked-modal:not([hidden])');
+ $('main').inert=browsing;document.querySelector('.footer').inert=browsing;
+ document.body.classList.toggle('tm-browse-open',browsing);
+}
+window.TransmissionUI={refresh,syncViews};
 refresh();
 })();

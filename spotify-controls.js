@@ -103,6 +103,7 @@ $('tm-shuffle').onclick=e=>busy(e.currentTarget,async()=>{
   if(rt.sequencePending){showText('Esta selección mantiene el orden elegido mientras se completa la cola.');return}
  const state=$('tm-shuffle').getAttribute('aria-pressed')!=='true';
  await sp.api('/me/player/shuffle?state='+state,{method:'PUT'});
+ if(state)rt.releaseQueue?.();
  $('tm-shuffle').setAttribute('aria-pressed',String(state));
  showText(state?'Aleatorio activado en tu dispositivo.':'Aleatorio desactivado.');
 });
@@ -116,34 +117,7 @@ $('tm-repeat').onclick=e=>busy(e.currentTarget,async()=>{
  $('tm-repeat').setAttribute('aria-pressed',String(next!=='off'));
  showText(next==='off'?'Repetición desactivada.':next==='context'?'Se repite la lista o el álbum.':'Se repite esta canción.');
 });
-$('tm-queue-button').onclick=async()=>{
- c.dataset.mode='queue';c.replaceChildren(document.createTextNode('Consultando cola…'));
- if(!rt.account){showText('Conecta Spotify para consultar tu cola.');return}
- try{
-  let tracks=rt.queue||[];
-  if(!tracks.length){
-   const data=await sp.api('/me/player/queue');
-   tracks=(data.queue||[]).filter(t=>t?.type==='track'&&t?.uri);
-  }
-  if(c.dataset.mode!=='queue')return;
-  c.replaceChildren();
-  for(const [index,t] of tracks.entries()){
-   const row=document.createElement('button');row.className='tm-queue-row';row.type='button';
-   row.style.cssText='display:block;width:100%;text-align:left;background:transparent;color:inherit;border-width:0 0 1px;cursor:pointer';
-   row.setAttribute('aria-label','Reproducir '+t.name);
-   const name=document.createElement('span');name.textContent=(index+1)+'. '+(t.name||'Sin título');
-   const by=document.createElement('small');by.textContent=(t.artists||[]).map(x=>x.name).join(', ');
-   row.append(name,by);
-   row.onclick=async()=>{
-    rt.player?.activateElement?.();row.disabled=true;
-    try{if(await rt.playSequence(tracks,index))openPopup(false)}finally{row.disabled=false}
-   };
-   c.append(row);
-  }
-  if(!c.childElementCount)showText('La cola no tiene canciones disponibles.');
- }catch(err){showText(err.message)}
-};
-$('tm-devices-button').onclick=async()=>{
+$('tm-queue-button').onclick=()=>{openPopup(false);window.TransmissionQueue?.open()};$('tm-devices-button').onclick=async()=>{
  c.dataset.mode='devices';c.replaceChildren(document.createTextNode('Buscando dispositivos…'));
  if(!rt.account){showText('Conecta Spotify para elegir un dispositivo.');return}
  try{
@@ -155,7 +129,7 @@ $('tm-devices-button').onclick=async()=>{
      btn.textContent=device.name+' · '+device.type;btn.setAttribute('aria-current',String(!!device.is_active));
      btn.onclick=async()=>{
        try{
-         await sp.api('/me/player',{method:'PUT',body:JSON.stringify({device_ids:[device.id],play:false})});
+         await rt.transferPlayback(device.id);
          showText('Dispositivo seleccionado: '+device.name);
          rt.status('Reproducción transferida a '+device.name+'.');
        }catch(e){showText(e.message)}
@@ -209,4 +183,16 @@ window.addEventListener('tm:track',e=>{
 });
 toggleGlyph(false);
 setInterval(()=>{positionUi();if(rt.account&&rt.player)$('tm-volume').disabled=false},1000);
+document.addEventListener('keydown',event=>{
+ if(event.ctrlKey||event.metaKey||event.altKey||event.repeat||event.target?.closest?.('input,textarea,select,button,a,[contenteditable="true"],[role="menu"]'))return;
+ if(document.querySelector('[aria-modal="true"]:not([hidden])')?.getClientRects().length)return;
+ if(event.code==='Space'){event.preventDefault();$('tm-play').click()}
+ if(event.shiftKey&&event.key==='ArrowRight'){event.preventDefault();$('tm-next').click()}
+ if(event.shiftKey&&event.key==='ArrowLeft'){event.preventDefault();$('tm-prev').click()}
+ if(!event.shiftKey&&['ArrowLeft','ArrowRight'].includes(event.key)&&playback?.duration){
+   event.preventDefault();const elapsed=playback.playing?Date.now()-seenAt:0;
+   const ms=Math.max(0,Math.min(playback.duration,(playback.position||0)+elapsed+(event.key==='ArrowRight'?5000:-5000)));
+   void rt.action(()=>sp.api('/me/player/seek?position_ms='+Math.round(ms),{method:'PUT'}));
+ }
+});
 })();

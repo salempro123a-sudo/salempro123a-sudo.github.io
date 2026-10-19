@@ -52,6 +52,7 @@ function render(){
      cover.onclick=()=>void playLikedFrom(t);
      const meta=create('div','tm-liked-caption');
      meta.append(create('strong','',t.name),create('small','',artists(t)));
+     if(window.TransmissionTrackActions)meta.append(window.TransmissionTrackActions.optionsButton(t,'tm-card-options'));
      card.append(cover,meta);likedGrid.append(card);
    }
  }
@@ -75,11 +76,13 @@ function renderLikedAll(){
  const all=sortedLiked();
  const tracks=value?all.filter(t=>(t.name+' '+artists(t)+' '+(t.album?.name||'')).toLocaleLowerCase().includes(value)):all;
  for(const t of tracks){
-   const card=create('button','tm-liked-all-card');card.type='button';
+   const card=create('article','tm-liked-all-card');
+   const listen=create('button','tm-liked-all-listen');listen.type='button';listen.setAttribute('aria-label','Reproducir '+t.name);
    const art=create('span','tm-liked-all-art'),pic=image(t);if(pic)art.style.backgroundImage='url("'+pic+'")';
    const caption=create('span','tm-liked-all-name');caption.append(create('strong','',t.name),create('small','',artists(t)));
-   card.append(art,caption);
-   card.onclick=()=>{closeLikedAll();void playLikedFrom(t)};
+   listen.append(art,caption);card.append(listen);
+   if(window.TransmissionTrackActions)card.append(window.TransmissionTrackActions.optionsButton(t,'tm-card-options'));
+   listen.onclick=()=>void playLikedFrom(t);
    host.append(card);
  }
  if(!tracks.length)host.append(create('p','tm-liked-empty','Sin coincidencias.'));
@@ -127,6 +130,7 @@ async function openLikedAll(){
  if(!dialog||!liked.length)return;
  modalFocus=document.activeElement;
  modalOpen=true;dialog.hidden=false;dialog.setAttribute('aria-hidden','false');
+ window.TransmissionUI?.syncViews?.();
  el('tm-liked-sort').value=likedOrder;
  renderLikedAll();
  el('tm-liked-search').focus();
@@ -142,6 +146,7 @@ async function openLikedAll(){
 function closeLikedAll(){
  modalOpen=false;
  const dialog=el('tm-liked-modal');dialog.hidden=true;dialog.setAttribute('aria-hidden','true');
+ window.TransmissionUI?.syncViews?.();
  modalFocus?.focus?.();
 }
 function fillPlaylistRail(){
@@ -510,7 +515,7 @@ document.addEventListener('tm:library-changed',event=>{
  const id=event.detail?.id,saved=event.detail?.saved;
  if(!id)return;
  if(saved===true){
-   const current=rt?.currentTrack;
+   const current=event.detail?.track||rt?.currentTrack;
    if(current?.id===id&&!liked.some(x=>x.id===id)){
      liked.unshift(current);likesTotal++;likedOffset++;page=0;
    }
@@ -529,6 +534,7 @@ window.addEventListener?.('tm:account-track',event=>{
  });
  window.addEventListener?.('resize',render);
 window.TransmissionTaste={
+ closeLikedAll,
  arrangeSession,
  getLikedForExport:()=>accountConnected?unique(liked).slice(0,40):[],
  getPublicLiked:()=>unique(liked).slice(0,40),

@@ -9,7 +9,7 @@ const list={tracks:[],playlists:[],recent:[],liked:[],shared:null},owner=sp.CONF
 let account=null,player=null,device=null,deviceSelected=false,hero=0,featured=null;
 let selected=null,lastPlayerState=null,poll=null,sdkPromise=null,lastOnAirId=null;
 let lastPlayback=null,publicSnapshot=null,accountTracks=[],accountSaved=[],accountArtists=[],manualUntil=0,station=null,ready=false;
-let connectionError=null;
+let connectionError=null,outputDevice=null,stagedTracks=[],queueTail=Promise.resolve(),queueRevision=0;
 let recentEvents=[];
 const safeArt=u=>typeof u==='string'&&/^https:\/\/(i\.scdn\.co|mosaic\.scdn\.co|image-cdn-ak\.spotifycdn\.com|seeded-session-images\.scdn\.co)\//.test(u)?u:'';
 const title=t=>t?.name||'';
@@ -27,7 +27,9 @@ function status(message,error=false){
   if(el){el.hidden=true;el.textContent='';el.setAttribute('aria-hidden','true')}
   if(error)console.warn('TRANSMISSION:',entry.message);
 }
-function banner(message,duration=3200){status(message);const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),duration)}
+let toastTimer=null;
+function banner(message,duration=3200){status(message);const toast=$('toast');if(!toast)return;clearTimeout(toastTimer);toast.textContent=message;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),duration)}
+function queueChanged(){queueRevision++;window.dispatchEvent(new CustomEvent('tm:queue',{detail:{revision:queueRevision}}));window.TransmissionUI?.refresh?.()}
 function connectionMessage(){
   const block=sp.cooldown||connectionError;
   if(block?.status===429||block?.retryAt){
@@ -49,7 +51,7 @@ function validId(id){return typeof id==='string'&&/^[A-Za-z0-9]{22}$/.test(id)}
 function publicTrack(raw){
   if(!raw||!validId(raw.id))return null;
   const a=Array.isArray(raw.artists)?raw.artists.slice(0,4):[];
-  const artists=a.map(x=>({name:String(x?.name||'').slice(0,110)})).filter(x=>x.name);
+  const artists=a.map(x=>({name:String(x?.name||'').slice(0,110),...(validId(x?.id)?{id:x.id,uri:'spotify:artist:'+x.id}:{})})).filter(x=>x.name);
   return {
     id:raw.id,uri:'spotify:track:'+raw.id,type:'track',name:String(raw.name||'').slice(0,220),
     is_playable:typeof raw.is_playable==='boolean'?raw.is_playable:undefined,
@@ -250,10 +252,9 @@ function renderTiles(tracks){
     const info=create('div','record-info');
     const text=create('div');
     text.append(create('span','record-type',t.album?.release_date?.slice(0,4)||'CANCIÓN'),create('h3','',title(t)),create('p','',artist(t)));
-    const add=create('a','save-button','↗');
-    add.href=t.external_urls?.spotify||'https://open.spotify.com/track/'+t.id;
-    add.target='_blank';add.rel='noopener noreferrer';
-    add.title='Abrir esta canción en Spotify';
+    const add=create('button','save-button','…');add.type='button';
+    add.setAttribute('aria-label','Opciones de '+title(t));
+    add.onclick=event=>window.TransmissionTrackActions?.open?.(t,event.currentTarget);
     info.append(text,add);card.append(button,info);grid.append(card);
   });
 }
@@ -304,11 +305,15 @@ function renderRecent(tracks){
     section.append(button);return;
   }
   uniqueTracks(tracks).slice(0,4).forEach((t,i)=>{
-    const btn=create('button','tm-recent-item');btn.type='button';btn.title='Escuchar '+title(t);
+    const btn=create('div','tm-recent-item');
     const cover=create('span','tm-recent-cover');applyTrackArt(cover,t);
     const meta=create('span','tm-recent-desc');meta.append(create('strong','',title(t)),create('small','',artist(t)));
-    btn.append(cover,meta,create('span','tm-recent-arrow','▶'));
-    btn.onclick=()=>void playTrack(t);section.append(btn);
+    const play=create('button','tm-recent-play');play.type='button';play.setAttribute('aria-label','Escuchar '+title(t));
+    play.append(cover,meta,create('span','tm-recent-arrow','▶'));
+    play.onclick=()=>void playSequence(tracks,i);
+    const options=create('button','tm-card-options','…');options.type='button';options.setAttribute('aria-label','Opciones de '+title(t));
+    options.onclick=e=>window.TransmissionTrackActions?.open?.(t,e.currentTarget);
+    btn.append(play,options);section.append(btn);
   });
 }
 function setLiveLabel(value){
@@ -381,6 +386,7 @@ async function sdk(){
   player=p;return p;
 }
 async function activatePlayer(){
+  if(outputDevice&&outputDevice!==device)return;
   const p=await sdk();
   if(!device){
     const max=Date.now()+9500;
@@ -454,27 +460,28 @@ async function playSequence(items,startIndex=0){
  if(!tracks.length){status('La selección no contiene canciones disponibles.',true);return false}
  if(!account){status('Conecta una cuenta Premium para reproducir la sesión.',true);return false}
  player?.activateElement?.();
- const request=++playbackGeneration,priorQueue=detachStation();
+ const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
  const nextStation={tracks,index:startIndex,end:Math.min(tracks.length,startIndex+sequenceWindow),loop:false,busy:false,pending:null};
  const ok=await replacePlayback(request,priorQueue,async()=>{
    await activatePlayer();
-   const target='&device_id='+encodeURIComponent(device);
+   const target='&device_id='+encodeURIComponent(outputDevice||device);
    await sp.api('/me/player/shuffle?state=false'+target,{method:'PUT'});
    await sp.api('/me/player/repeat?state=off'+target,{method:'PUT'});
-   await sp.api('/me/player/play?device_id='+encodeURIComponent(device),{
+   await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
      method:'PUT',body:JSON.stringify({uris:tracks.slice(startIndex,nextStation.end).map(t=>t.uri)})
    });
  });
  if(request!==playbackGeneration)return false;
- if(!ok){status('Spotify no inició la secuencia. Consulta Diagnóstico.',true);return false}
+ if(!ok){station=previousStation;queueChanged();status('Spotify no inició la secuencia. Consulta Diagnóstico.',true);banner('No se pudo iniciar la selección. Inténtalo de nuevo.');return false}
  station=nextStation;
+ stagedTracks=[];queueChanged();
  updatePlayerSong(tracks[startIndex]);
  closeOfficialEmbed();
  return true;
 }
 async function playTrack(t){
   if(!t?.uri)return;
-  const request=++playbackGeneration,priorQueue=detachStation();
+  const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
   updatePlayerSong(t);
   if(!account){
     showOfficialEmbed('track',t.id);
@@ -484,20 +491,21 @@ async function playTrack(t){
   player?.activateElement?.();
   const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
-    await sp.api('/me/player/play?device_id='+encodeURIComponent(device),{
+    await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
       method:'PUT',body:JSON.stringify({uris:[t.uri]})
     });
   });
   if(request!==playbackGeneration)return false;
-  if(ok)closeOfficialEmbed();
+  if(ok){stagedTracks=[];queueChanged();closeOfficialEmbed()}
   else{
+    station=previousStation;queueChanged();
     showOfficialEmbed('track',t.id);
     status('No se pudo iniciar el Web Player; abrí el reproductor oficial aquí mismo.',true);
   }
 }
 async function playPlaylist(p){
   if(!p?.uri)return;
-  const request=++playbackGeneration,priorQueue=detachStation();
+  const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
   if(!account){
     showOfficialEmbed('playlist',p.id);
     status('Playlist disponible en el reproductor oficial incrustado. Conecta Premium para usar controles avanzados.');
@@ -506,13 +514,14 @@ async function playPlaylist(p){
   player?.activateElement?.();
   const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
-    await sp.api('/me/player/play?device_id='+encodeURIComponent(device),{
+    await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
       method:'PUT',body:JSON.stringify({context_uri:p.uri})
     });
   });
   if(request!==playbackGeneration)return false;
-  if(ok)closeOfficialEmbed();
+  if(ok){stagedTracks=[];queueChanged();closeOfficialEmbed()}
   else{
+    station=previousStation;queueChanged();
     showOfficialEmbed('playlist',p.id);
     status('No se pudo iniciar el Web Player; abrí el reproductor oficial en nuestra página.',true);
   }
@@ -520,11 +529,11 @@ async function playPlaylist(p){
 async function playPlaylistAt(playlist,index){
  if(!playlist?.id||!Number.isInteger(index)||index<0)return false;
  if(!account){showOfficialEmbed('playlist',playlist.id);return false}
- const request=++playbackGeneration,priorQueue=detachStation();
+ const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
  player?.activateElement?.();
  const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
-   await sp.api('/me/player/play?device_id='+encodeURIComponent(device),{
+   await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
      method:'PUT',body:JSON.stringify({
        context_uri:playlist.uri||'spotify:playlist:'+playlist.id,
        offset:{position:index}
@@ -532,13 +541,18 @@ async function playPlaylistAt(playlist,index){
    });
  });
  if(request!==playbackGeneration)return false;
- if(ok)closeOfficialEmbed();
- else showOfficialEmbed('playlist',playlist.id);
+ if(ok){stagedTracks=[];queueChanged();closeOfficialEmbed()}
+ else{station=previousStation;queueChanged();showOfficialEmbed('playlist',playlist.id)}
  return ok;
 }
 async function toggle(){
+  if(stagedTracks.length&&!station)return playSequence(stagedTracks);
   player?.activateElement?.();
   await action(async()=>{
+    const target=outputDevice||lastPlayback?.deviceId;
+    if(target&&target!==device){
+      await sp.api('/me/player/'+(lastPlayback?.playing?'pause':'play')+'?device_id='+encodeURIComponent(target),{method:'PUT'});return;
+    }
     await activatePlayer();
     const state=await player.getCurrentState();
     if(state){await player.togglePlay();return}
@@ -554,9 +568,10 @@ async function maintainStation(item){
  if(!active||!item?.id)return;
  const ids=new Set([item.id,item.linked_from?.id].filter(Boolean));
  const current=active.tracks.findIndex(t=>ids.has(t.id)||ids.has(t.linked_from?.id));
- if(current<0){station=null;return}
- active.index=current;
- if(active.busy||current<active.end-3||Date.now()<(active.retryAfter||0))return;
+ if(current<0){station=null;queueChanged();return}
+ const changed=active.index!==current;
+ active.index=current;if(changed)queueChanged();
+ if(active.editing||active.busy||current<active.end-3||Date.now()<(active.retryAfter||0))return;
  // The current API window is ending. Queue the next item once, without restarting audio.
  let nextIndex=active.end;
  if(nextIndex>=active.tracks.length){
@@ -568,19 +583,125 @@ async function maintainStation(item){
  active.busy=true;
  let queued=false;
  try{
-   pendingQueueAppend=active.pending=sp.api('/me/player/queue?uri='+encodeURIComponent(next.uri)+'&device_id='+encodeURIComponent(device),{method:'POST'});
+   pendingQueueAppend=active.pending=sp.api('/me/player/queue?uri='+encodeURIComponent(next.uri)+'&device_id='+encodeURIComponent(outputDevice||lastPlayback?.deviceId||device),{method:'POST'});
    await active.pending;
    queued=true;
-   if(station===active){
-     if(nextIndex===0)active.end=1;
-     else active.end=nextIndex+1;
-   }
+   if(nextIndex===0)active.end=1;
+   else active.end=nextIndex+1;
  }catch(e){active.retryAfter=Date.now()+(e.status===429?30000:10000);status('No se pudo continuar la cola: '+e.message,true)}
  finally{active.busy=false;if(pendingQueueAppend===active.pending)pendingQueueAppend=null;active.pending=null}
  if(queued&&station===active&&active.index!==current&&active.index>=active.end-3){
    void maintainStation(active.tracks[active.index]);
  }
 }
+
+/* Queue edits are serialized with playback starts. A managed selection is rebuilt
+   through the documented playback endpoint at its actual position. External
+   Spotify queues can be appended to, but are never presented as editable here. */
+function serializeQueue(operation){
+ const next=queueTail.catch(()=>{}).then(operation);
+ queueTail=next.catch(()=>false);
+ return next;
+}
+async function editManagedQueue(transform,expectedRevision=null){
+ const generation=playbackGeneration,active=station;
+ if(!active){
+   if(lastPlayback?.trackId&&!stagedTracks.length)throw Error('Esta cola se controla desde Spotify.');
+   const next=transform([...stagedTracks]);
+   if(!next)return false;
+   stagedTracks=next;queueChanged();return true;
+ }
+ const operation=playbackTail.catch(()=>{}).then(async()=>{
+   if(generation!==playbackGeneration||station!==active)throw Error('La reproducción cambió. Inténtalo de nuevo.');
+   active.editing=true;
+   try{
+     if(active.pending)await active.pending.catch(()=>{});
+     const live=await sp.api('/me/player');
+     if(!live?.item||!live.device?.id)throw Error('No hay un dispositivo activo. Reproduce una canción primero.');
+     if(generation!==playbackGeneration||station!==active)throw Error('La reproducción cambió. Inténtalo de nuevo.');
+     const current=active.tracks.findIndex(t=>t.id===live.item.id||t.id===live.item.linked_from?.id||t.linked_from?.id===live.item.id);
+     if(current<0){station=null;queueChanged();throw Error('La canción cambió desde Spotify. Actualiza la cola.');}
+     if(expectedRevision!==null&&(expectedRevision!==queueRevision||current!==active.index)){
+       active.index=current;queueChanged();throw Error('La cola cambió. Vuelve a elegir la canción.');
+     }
+     const future=transform(active.tracks.slice(current+1));
+     if(!future)return false;
+     const futureIds=new Set(future.map(t=>t.id));
+     const history=active.tracks.slice(0,current).filter(t=>!futureIds.has(t.id));
+     const index=history.length,tracks=[...history,active.tracks[current],...future];
+     const end=Math.min(tracks.length,index+sequenceWindow);
+     // Changes entirely beyond the loaded window need no playback request.
+     const before=active.tracks.slice(current,active.end).map(t=>t.uri).join('|');
+     const after=tracks.slice(index,end).map(t=>t.uri).join('|');
+     if(before!==after){
+       await sp.api('/me/player/play?device_id='+encodeURIComponent(live.device.id),{
+         method:'PUT',body:JSON.stringify({uris:tracks.slice(index,end).map(t=>t.uri),position_ms:Math.max(0,Number(live.progress_ms)||0)})
+       });
+       // Commit only after Spotify accepts the new playback window.
+       if(!live.is_playing){
+         try{await sp.api('/me/player/pause?device_id='+encodeURIComponent(live.device.id),{method:'PUT'})}
+         catch(error){status('No se pudo conservar la pausa: '+error.message,true);banner('Cola actualizada. Pulsa pausa para detener la reproducción.');}
+       }
+     }
+     if(generation!==playbackGeneration||station!==active)return false;
+     active.tracks=tracks;active.index=index;active.end=end;active.loop=false;
+     queueChanged();void readPlaying();return true;
+   }finally{active.editing=false}
+ });
+ playbackTail=operation.catch(()=>false);
+ return operation;
+}
+function enqueueTracks(items,options={}){
+ const tracks=uniqueTracks(items,Infinity).filter(t=>t.is_playable!==false);
+ return serializeQueue(async()=>{
+   if(!account)throw Error('Conecta Spotify para añadir canciones a la cola.');
+   if(!tracks.length)throw Error('No hay canciones disponibles para añadir.');
+   if(station||stagedTracks.length||!lastPlayback?.trackId){
+     let count=0;
+     const ok=await editManagedQueue(future=>{
+       const currentId=station?.tracks?.[station.index]?.id;
+       const known=new Set(future.map(t=>t.id));if(currentId)known.add(currentId);
+       const added=options.next?tracks.filter(t=>t.id!==currentId):tracks.filter(t=>!known.has(t.id));count=added.length;
+       if(!count)return null;
+       const promoted=new Set(added.map(t=>t.id));
+       return options.next?[...added,...future.filter(t=>!promoted.has(t.id))]:[...future,...added];
+     });
+     if(ok)banner(count===1?(options.next?'Sonará después: ':'Añadida a la cola: ')+tracks[0].name:count+' canciones añadidas a la cola.');
+     else banner('La selección ya está en la cola.');
+     return ok;
+   }
+   if(options.next)throw Error('Reproducir después está disponible en las selecciones de TRANSMISSION.');
+   const generation=playbackGeneration,accountId=account.id;
+   let added=0;
+   try{
+     for(const track of tracks){
+       if(generation!==playbackGeneration||account?.id!==accountId)throw Error('La reproducción cambió mientras se añadían canciones.');
+       const target=lastPlayback?.deviceId||outputDevice||device;
+       await sp.api('/me/player/queue?uri='+encodeURIComponent(track.uri)+(target?'&device_id='+encodeURIComponent(target):''),{method:'POST'});
+       added++;
+     }
+   }catch(error){if(added)banner(added+' canciones añadidas; no se pudo completar la selección.');throw error}
+   queueChanged();banner(added===1?'Añadida a la cola: '+tracks[0].name:added+' canciones añadidas a la cola.');return true;
+ });
+}
+function changeQueue(index,step,revision=queueRevision){
+ return serializeQueue(()=>{
+ if(revision!==queueRevision)throw Error('La cola cambió. Vuelve a elegir la canción.');
+ return editManagedQueue(future=>{
+   if(!Number.isInteger(index)||index<0||index>=future.length)return null;
+   const next=[...future];
+   if(step===null)next.splice(index,1);
+   else{const to=index+step;if(to<0||to>=next.length)return null;[next[index],next[to]]=[next[to],next[index]];}
+   return next;
+ },revision);
+ });
+}
+async function transferPlayback(id){
+ if(typeof id!=='string'||!id)throw Error('Dispositivo no válido.');
+ await sp.api('/me/player',{method:'PUT',body:JSON.stringify({device_ids:[id],play:!!lastPlayback?.playing})});
+ outputDevice=id;deviceSelected=id===device;void readPlaying();
+}
+function releaseQueue(){if(station&&station.end>=station.tracks.length){station=null;queueChanged()}}
 
 async function readPlaying(){
   if(!account||document.hidden)return;
@@ -782,14 +903,17 @@ function bind(){
 }
 window.TransmissionRuntime={
   sdk,activatePlayer,toggle,readPlaying,playTrack,playPlaylist,playPlaylistAt,playSequence,
-  action,status,
+  action,status,notify:banner,enqueueTracks,changeQueue,clearQueue:()=>serializeQueue(()=>editManagedQueue(()=>[])),transferPlayback,releaseQueue,
   get ready(){return ready},
   get diagnostics(){return [...diagLog]},
   get account(){return account},
   get player(){return player},
   get device(){return device},
   get currentTrack(){return selected||featured},
-  get queue(){return station?.tracks?station.tracks.slice(station.index):[]},
+  get queue(){return station?.tracks?station.tracks.slice(station.index):[...stagedTracks]},
+  get managedQueue(){return !!station||!!stagedTracks.length},
+  get queueHasCurrent(){return !!station},
+  get queueRevision(){return queueRevision},
    get sequencePending(){return !!station&&station.end<station.tracks.length},
   get featured(){return featured},
   get state(){return lastPlayback},

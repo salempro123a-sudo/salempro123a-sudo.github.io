@@ -5,18 +5,21 @@
   <title>TRANSMISSION — Personal music archive</title>
   <link rel="icon" href="./favicon.svg?v=2" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./transmission.css?v=20261012rebuild4">
-  <script defer src="./spotify-auth.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-editorial.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-controls.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-taste.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-library.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-polish.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-artist.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-queue.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-favorites.js?v=20261012rebuild4"></script>
-  <script defer src="./spotify-search.js?v=20261012rebuild4"></script>
-  <script defer src="./transmission-ui.js?v=20261012rebuild4"></script>
+  <link rel="stylesheet" href="./transmission.css?v=20261019catalog1">
+  <link rel="stylesheet" href="./transmission-catalog.css?v=20261019catalog1">
+  <script defer src="./spotify-auth.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-editorial.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-controls.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-taste.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-library.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-polish.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-artist.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-queue.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-favorites.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-track-actions.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-catalog.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-search.js?v=20261019catalog1"></script>
+  <script defer src="./transmission-ui.js?v=20261019catalog1"></script>
 </head><body>
 <a class="skip-link" href="#main">Saltar al contenido</a>
 <header class="site-header" id="top">
@@ -155,8 +158,19 @@
   </div>
 </section>
 <div id="spotify-status" hidden aria-hidden="true"></div>
+<section id="tm-catalog" class="tm-catalog" hidden aria-label="Explorar música">
+ <div class="tm-catalog-inner">
+  <header class="tm-catalog-header">
+   <div class="tm-catalog-navigation"><button id="tm-catalog-back" type="button" aria-label="Vista anterior" disabled>←</button><button id="tm-catalog-forward" type="button" aria-label="Vista siguiente" disabled>→</button></div>
+   <form id="tm-catalog-form" class="tm-catalog-form" role="search"><label for="tm-catalog-query"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg></label><input id="tm-catalog-query" type="search" aria-label="Buscar canciones, artistas, álbumes o playlists" placeholder="Canción, artista, álbum…" autocomplete="off" maxlength="200"><button type="submit" aria-label="Buscar">↵</button></form>
+   <button id="tm-catalog-close" class="tm-catalog-close" type="button" aria-label="Cerrar explorador">✕</button>
+  </header>
+  <nav id="tm-catalog-tabs" class="tm-catalog-tabs" aria-label="Tipo de resultado"><button type="button" data-type="track" aria-pressed="true">CANCIONES</button><button type="button" data-type="artist" aria-pressed="false">ARTISTAS</button><button type="button" data-type="album" aria-pressed="false">ÁLBUMES</button><button type="button" data-type="playlist" aria-pressed="false">PLAYLISTS</button></nav>
+  <div id="tm-catalog-content" class="tm-catalog-content" aria-live="polite" aria-busy="false"></div>
+ </div>
+</section>
 <div class="tm-library-screen" id="tm-library-screen" hidden aria-hidden="true">
- <div class="tm-library-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-library-title">
+ <div class="tm-library-dialog" role="dialog" aria-modal="false" aria-labelledby="tm-library-title">
    <header class="tm-library-header"><div><h2 id="tm-library-title">MIS LISTAS</h2><p id="tm-library-count"></p></div><button id="tm-library-close" type="button" aria-label="Cerrar listas">✕</button></header>
    <div class="tm-library-bar" id="tm-library-bar">
      <input id="tm-library-search" type="search" aria-label="Filtrar playlists" placeholder="Buscar en mis listas" autocomplete="off">
@@ -184,7 +198,7 @@
  </div>
 </div>
 <div class="tm-liked-modal" id="tm-liked-modal" hidden>
- <div class="tm-liked-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-liked-dialog-title">
+ <div class="tm-liked-dialog" role="dialog" aria-modal="false" aria-labelledby="tm-liked-dialog-title">
   <header class="tm-liked-dialog-head"><h2 id="tm-liked-dialog-title">ME GUSTA</h2><button id="tm-liked-close" aria-label="Cerrar favoritas" type="button">✕</button></header>
   <div class="tm-liked-toolbar"><label class="tm-liked-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.4"/><path d="m15.2 15.2 5 5"/></svg><input id="tm-liked-search" type="search" aria-label="Buscar en canciones guardadas" placeholder="" autocomplete="off"></label><select id="tm-liked-sort" aria-label="Orden de canciones guardadas"><option value="new">RECIENTES</option><option value="old">ANTIGUAS</option><option value="az">A–Z</option><option value="artist">ARTISTA</option></select><span id="tm-liked-total"></span></div>
   <div id="tm-liked-all-grid" class="tm-liked-all-grid"></div>
@@ -198,7 +212,7 @@
   <a id="tm-artist-external" target="_blank" rel="noopener noreferrer">VER EN SPOTIFY ↗</a>
  </div>
 </div>
-<div id="tm-mini-queue-panel" class="tm-mini-queue-panel" hidden aria-label="Cola actual"><div class="tm-mini-queue-top"><strong>COLA</strong><button type="button" id="tm-mini-queue-close" aria-label="Cerrar cola">✕</button></div><div id="tm-mini-queue-tracks" class="tm-mini-queue-tracks"></div></div>
+<section id="tm-mini-queue-panel" class="tm-mini-queue-panel" hidden aria-label="Cola de reproducción"><div class="tm-mini-queue-top"><div><strong>COLA</strong><small id="tm-queue-count"></small></div><div class="tm-queue-tools"><button type="button" id="tm-queue-clear" hidden>VACIAR</button><button type="button" id="tm-queue-refresh" aria-label="Actualizar cola" title="Actualizar cola">↻</button><button type="button" id="tm-mini-queue-close" aria-label="Cerrar cola">✕</button></div></div><div id="tm-mini-queue-tracks" class="tm-mini-queue-tracks"></div></section>
 <div id="owner-public-export" class="tm-publish-modal" hidden><div class="tm-publish-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-publish-title"><header><h2 id="tm-publish-title">SELECCIÓN PÚBLICA</h2><button id="tm-publish-close" type="button" aria-label="Cerrar selección pública">✕</button></header><label class="tm-share-label"><input id="tm-share-recent" type="checkbox"> Incluir últimas escuchas</label><label class="tm-share-label"><input id="tm-share-liked" type="checkbox"> Incluir canciones guardadas</label><button id="tm-export-public" class="light-cta" type="button">DESCARGAR SELECCIÓN</button></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body></html>

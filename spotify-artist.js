@@ -16,6 +16,7 @@ function close(){
 }
 async function open(name){
  if(!name||typeof name!=='string')return;
+ if(window.TransmissionCatalog)return window.TransmissionCatalog.openArtist(name);
  focusBefore=document.activeElement;
  activeName=name;
  const seq=++activeRequest;
