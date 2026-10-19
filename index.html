@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./transmission.css?v=20261019catalog1">
   <link rel="stylesheet" href="./transmission-catalog.css?v=20261019catalog1">
-  <link rel="stylesheet" href="./transmission-pages.css?v=20261019pages1">
+  <link rel="stylesheet" href="./transmission-pages.css?v=20261019clean1">
   <link rel="stylesheet" href="./transmission-archive.css?v=20261019archive1">
   <script defer src="./spotify-auth.js?v=20261019catalog1"></script>
   <script defer src="./spotify-editorial.js?v=20261019archive1"></script>
@@ -22,8 +22,8 @@
   <script defer src="./spotify-catalog.js?v=20261019archive1"></script>
   <script defer src="./spotify-search.js?v=20261019pages1"></script>
   <script defer src="./transmission-ui.js?v=20261019archive1"></script>
-  <script defer src="./transmission-listening.js?v=20261019archive1"></script>
-  <script defer src="./transmission-archive.js?v=20261019archive1"></script>
+  <script defer src="./transmission-listening.js?v=20261019clean1"></script>
+  <script defer src="./transmission-archive.js?v=20261019clean1"></script>
   <script defer src="./transmission-navigation.js?v=20261019archive1"></script>
 </head><body>
 <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -160,7 +160,8 @@
         <button id="tm-devices-button" class="tm-opt-button" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.4"/><path d="M8 21h8m-4-4v4"/></svg> DISPOSITIVOS</button>
       </div>
       <a id="tm-lyrics-button" class="tm-opt-button" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" title="Las letras oficiales se consultan dentro de Spotify">VER LETRAS EN SPOTIFY ↗</a>
-      <a class="tm-opt-button" href="#/escuchando">ESCUCHANDO / TEMPORIZADOR ↗</a>
+      <label class="tm-sleep-setting" for="tm-sleep-select"><span>TEMPORIZADOR</span><span class="tm-sleep-status" id="tm-sleep-status" hidden></span><select id="tm-sleep-select" aria-label="Temporizador" disabled><option value="0">DESACTIVADO</option><option value="15">15 MIN</option><option value="30">30 MIN</option><option value="45">45 MIN</option><option value="60">60 MIN</option></select></label>
+      <a class="tm-opt-button" href="#/escuchando">ESCUCHANDO ↗</a>
       <a class="tm-opt-button" href="#/atajos">GUÍA Y ATAJOS ↗</a>
       <button id="tm-diagnostics" class="tm-opt-button" type="button">DIAGNÓSTICO DEL REPRODUCTOR ↗</button>
       <button id="tm-open-publish" class="tm-opt-button" type="button" hidden>PREPARAR SELECCIÓN PÚBLICA ↗</button>
@@ -233,5 +234,4 @@
 <section id="tm-mini-queue-panel" class="tm-mini-queue-panel" hidden aria-label="Cola de reproducción"><div class="tm-mini-queue-top"><div><strong>COLA</strong><small id="tm-queue-count"></small></div><div class="tm-queue-tools"><button type="button" id="tm-queue-clear" hidden>VACIAR</button><button type="button" id="tm-queue-refresh" aria-label="Actualizar cola" title="Actualizar cola">↻</button><button type="button" id="tm-mini-queue-close" aria-label="Cerrar cola">✕</button></div></div><div id="tm-mini-queue-tracks" class="tm-mini-queue-tracks"></div></section>
 <div id="owner-public-export" class="tm-publish-modal" hidden><div class="tm-publish-dialog" role="dialog" aria-modal="true" aria-labelledby="tm-publish-title"><header><h2 id="tm-publish-title">SELECCIÓN PÚBLICA</h2><button id="tm-publish-close" type="button" aria-label="Cerrar selección pública">✕</button></header><label class="tm-share-label"><input id="tm-share-recent" type="checkbox"> Incluir últimas escuchas</label><label class="tm-share-label"><input id="tm-share-liked" type="checkbox"> Incluir canciones guardadas</label><button id="tm-export-public" class="light-cta" type="button">DESCARGAR SELECCIÓN</button></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="tm-timer-indicator" id="tm-timer-indicator" hidden aria-label="Temporizador activo"><a href="#/escuchando">PAUSA EN <span id="tm-timer-remaining"></span></a><button id="tm-timer-cancel" type="button" aria-label="Cancelar temporizador">×</button></div>
 </body></html>

@@ -45,12 +45,12 @@ Buscar, explorar, abrir artistas y álbumes, listas y favoritas son páginas con
 - `#/buscar?q=...&tipo=track`: resultados; también admite `artist`, `album` y `playlist`.
 - `#/artista/ID?nombre=...`, `#/album/ID?nombre=...` y `#/playlist/ID?nombre=...`: fichas enlazables.
 - `#/playlists`, `#/guardadas`, `#/rotacion` y `#/historial`: archivo personal.
-- `#/escuchando`: carátula, transporte y posición, álbum y artistas, guardar, compartir, siguientes y temporizador. También se abre tocando la carátula del reproductor inferior.
+- `#/escuchando`: carátula, transporte y posición, álbum y artistas, guardar, compartir y siguientes. También se abre tocando la carátula del reproductor inferior.
 - `#/atajos`: guía de uso y teclado.
 
 Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Se pueden borrar desde Explorar. La búsqueda completa se envía al pulsar Enter o Buscar; la cabecera conserva sus resultados rápidos. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
 
-El temporizador permite pausar en 15, 30, 45 o 60 minutos. Sigue activo al navegar, se puede cancelar desde su indicador y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
+El temporizador está en **Más opciones → Temporizador**, en una fila compacta. Permite pausar en 15, 30, 45 o 60 minutos; se cancela eligiendo Desactivado. Sigue activo al navegar y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
 
 La ampliación conserva OAuth, su configuración, los permisos solicitados, la renovación de sesión y la integración del Web Playback SDK. No añade servicios musicales externos ni credenciales.
 

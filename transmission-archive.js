@@ -40,7 +40,7 @@ function results(state){
 }
 function draw(){
  if(!active)return;const state=current(),albums=active.kind==='discos';content.replaceChildren();
- const head=make('header','tm-personal-heading');head.append(make('span','tm-page-kicker',albums?'TU BIBLIOTECA':'TU ROTACIÓN'),make('h1','',albums?'DISCOS GUARDADOS':'CANCIONES Y ARTISTAS'),make('p','',albums?'Los discos que elegiste conservar.':'La selección por afinidad que Spotify calcula para tu cuenta.'));content.append(head);
+ const head=make('header','tm-personal-heading');head.append(make('h1','',albums?'DISCOS GUARDADOS':'CANCIONES Y ARTISTAS'));content.append(head);
  const links=make('nav','tm-archive-nav');links.setAttribute('aria-label','Archivo personal');
  for(const [label,href] of [['PLAYLISTS','#/playlists'],['DISCOS','#/discos'],['ME GUSTA','#/guardadas'],['ROTACIÓN','#/rotacion']]){const link=make('a','',label);link.href=href;if((albums&&href==='#/discos')||(!albums&&href==='#/rotacion'))link.setAttribute('aria-current','page');links.append(link)}content.append(links);
  if(!rt.account){const empty=make('div','tm-page-empty');empty.append(make('p','','Conecta Spotify para abrir esta parte de tu archivo.'),button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(empty);return}

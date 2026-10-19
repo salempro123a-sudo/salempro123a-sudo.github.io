@@ -9,27 +9,17 @@ let page=null,state=rt.state,seenAt=Date.now(),seeking=false,timer=null,firing=f
 function button(label,run,cls='tm-catalog-button'){const node=make('button',cls,label);node.type='button';node.onclick=run;return node}
 function link(label,href,cls=''){const node=make('a',cls,label);node.href=href;return node}
 function title(kicker,name,description){
- const head=make('header','tm-listening-heading');head.append(make('span','tm-page-kicker',kicker),make('h1','',name));
+ const head=make('header','tm-listening-heading');if(kicker)head.append(make('span','tm-page-kicker',kicker));head.append(make('h1','',name));
  if(description)head.append(make('p','',description));content.append(head);
 }
 function empty(text){
  const block=make('div','tm-page-empty');block.append(make('p','',text),rt.account?link('EXPLORAR MÚSICA ↗','#/explorar','tm-catalog-button'):button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(block);
 }
 function currentTrack(){const track=rt.currentTrack;return state?.trackId&&track?.id===state.trackId?track:null}
-function renderTimer(){
- const panel=make('section','tm-sleep');panel.id='tm-sleep';
- panel.append(make('span','tm-page-kicker','AL FINAL DEL DÍA'),make('h2','','TEMPORIZADOR'));
- const status=make('p','tm-sleep-status');status.id='tm-sleep-status';panel.append(status);
- const choices=make('div','tm-sleep-choices');
- for(const minutes of [15,30,45,60])choices.append(button(minutes+' MIN',()=>arm(minutes),'tm-sleep-choice'));
- const cancel=button('CANCELAR',cancelTimer,'tm-text-action');cancel.id='tm-sleep-cancel';choices.append(cancel);panel.append(choices);
- panel.append(make('small','','Pausa la música con esta pestaña abierta. Puedes seguir navegando mientras tanto.'));
- return panel;
-}
 function renderNow(){
  const track=currentTrack();
  renderedTrack=track?.id||null;
- if(!track){title('TU SESIÓN','ESCUCHANDO AHORA','Todo lo que suena, en un solo lugar.');empty(rt.account?'Elige una canción para abrir su ficha y preparar lo que sigue.':'Conecta tu cuenta para ver lo que suena.');content.append(renderTimer());tick();return}
+ if(!track){title('','ESCUCHANDO');tick();return}
  const grid=make('div','tm-listening-layout'),main=make('article','tm-listening-record'),cover=make('div','tm-listening-cover');
  const art=ui.art(track);if(art)cover.style.backgroundImage='url("'+art+'")';else cover.append(make('span','','T/M'));
  cover.setAttribute('role','img');cover.setAttribute('aria-label','Carátula de '+(track.album?.name||track.name));main.append(cover);
@@ -45,23 +35,22 @@ function renderNow(){
  transport.append(button('←',()=>$('tm-prev').click(),'tm-listening-previous'),button('▶ ESCUCHAR',()=>$('tm-play').click(),'tm-listening-play'),button('→',()=>$('tm-next').click(),'tm-listening-next'));
  transport.firstChild.setAttribute('aria-label','Canción anterior');transport.lastChild.setAttribute('aria-label','Canción siguiente');transport.children[1].id='tm-listening-play';copy.append(transport);
  const actions=make('div','tm-listening-actions'),favorite=button('♡ GUARDAR',event=>void ui.run(event.currentTarget,()=>window.TransmissionFavorites.toggleTrack(track)),'tm-text-action');
- favorite.id='tm-listening-save';actions.append(favorite,button('+ A LA COLA',event=>void ui.run(event.currentTarget,()=>rt.enqueueTracks([track])),'tm-text-action'),button('COMPARTIR ↗',()=>$('tm-mini-share').click(),'tm-text-action'),ui.optionsButton(track));copy.append(actions);
+ favorite.id='tm-listening-save';actions.append(favorite,button('+ A LA COLA',event=>void ui.run(event.currentTarget,()=>rt.enqueueTracks([track])),'tm-text-action'),button('COLA ↗',()=>window.TransmissionQueue.open(),'tm-text-action'),button('COMPARTIR ↗',()=>$('tm-mini-share').click(),'tm-text-action'),ui.optionsButton(track));copy.append(actions);
  main.append(copy);grid.append(main);
- const aside=make('aside','tm-listening-aside');aside.append(renderTimer());const next=make('section','tm-listening-next-section');next.id='tm-listening-next-section';aside.append(next);grid.append(aside);content.append(grid);
+ const aside=make('aside','tm-listening-aside');const next=make('section','tm-listening-next-section');next.id='tm-listening-next-section';aside.append(next);grid.append(aside);content.append(grid);
  renderUpcoming();updateFavorite();tick();
 }
 function renderUpcoming(){
  const section=$('tm-listening-next-section');if(!section||page!=='escuchando')return;
- section.replaceChildren();const head=make('div','tm-catalog-section-head');head.append(make('h2','','DESPUÉS'),button('VER COLA ↗',()=>window.TransmissionQueue.open(),'tm-text-action'));section.append(head);
- if(!rt.managedQueue){section.append(make('p','tm-listening-note','Consulta y prepara las siguientes canciones en la cola.'));return}
- const selection=rt.queue||[],tracks=rt.queueHasCurrent?selection.slice(1):selection,duration=tracks.reduce((sum,track)=>sum+(Number(track.duration_ms)||0),0);
+ section.replaceChildren();const selection=rt.managedQueue?rt.queue||[]:[],tracks=rt.queueHasCurrent?selection.slice(1):selection,duration=tracks.reduce((sum,track)=>sum+(Number(track.duration_ms)||0),0);
+ section.parentElement.hidden=!tracks.length;section.closest('.tm-listening-layout').classList.toggle('tm-without-queue',!tracks.length);if(!tracks.length)return;
+ const head=make('div','tm-catalog-section-head');head.append(make('h2','','DESPUÉS'),button('VER COLA ↗',()=>window.TransmissionQueue.open(),'tm-text-action'));section.append(head);
  const meta=make('p','tm-listening-note',tracks.length+' '+(tracks.length===1?'CANCIÓN':'CANCIONES')+(duration&&tracks.every(track=>Number(track.duration_ms)>0)?' · '+ui.format(duration):''));section.append(meta);
  tracks.slice(0,4).forEach((track,index)=>section.append(ui.row(track,{tracks,index,number:index+1})));
- if(!tracks.length)section.append(link('BUSCAR MÚSICA +','#/explorar','tm-catalog-button'));
 }
 function renderHistory(){
  if(rt.account?.id!==recentAccount){recentAccount=rt.account?.id;sessionRecent=[]}
- title('ARCHIVO PERSONAL','ÚLTIMAS ESCUCHAS','Vuelve a lo que escuchaste, por día y hora.');
+ title('','ÚLTIMAS ESCUCHAS');
  const official=(rt.recentEvents||[]).filter(entry=>entry.track?.id),records=official.length?official:(rt.recent||[]).map(track=>({track}));
  if(!records.length&&!sessionRecent.length){empty(rt.account?'Todavía no hay escuchas recientes disponibles.':'Conecta Spotify para abrir tu archivo personal.');return}
  const groups=new Map(),today=new Date().toDateString(),dateFormat=new Intl.DateTimeFormat('es',{weekday:'long',day:'numeric',month:'long'}),timeFormat=new Intl.DateTimeFormat('es',{hour:'2-digit',minute:'2-digit',hour12:false});
@@ -81,13 +70,13 @@ function renderHistory(){
  }
 }
 function renderGuide(){
- title('A MANO','GUÍA Y ATAJOS','Todo a un gesto de distancia.');
+ title('','GUÍA Y ATAJOS');
  const cards=make('div','tm-guide-grid');
  for(const [name,copy,href] of [
    ['EXPLORAR','Busca canciones, abre un artista o recorre sus álbumes sin perder lo que suena.','#/explorar'],
    ['PREPARAR LA COLA','Añade con +. Abre … para colocar una canción después de la actual. La cola permite editar las selecciones de TRANSMISSION.','#/escuchando'],
    ['VOLVER A ESCUCHAR','Tus favoritas, playlists e historial tienen su propia página. Usa las flechas del navegador para volver.','#/historial'],
-   ['BAJAR EL RITMO','El temporizador pausa la música en 15, 30, 45 o 60 minutos mientras la pestaña sigue abierta.','#/escuchando']
+   ['TEMPORIZADOR','Más opciones → Temporizador. Pausa en 15, 30, 45 o 60 minutos con esta pestaña abierta.','#/escuchando']
  ]){const card=make('article','tm-guide-card');card.append(make('h2','',name),make('p','',copy),link('ABRIR ↗',href,'tm-text-action'));cards.append(card)}content.append(cards);
  const table=make('table','tm-shortcut-table'),body=make('tbody','');
  for(const [key,action] of [['/','Buscar música'],['ESPACIO','Reproducir / pausar'],['← / →','Retroceder / avanzar 5 segundos'],['MAYÚS + ← / →','Canción anterior / siguiente'],['Q','Abrir la cola'],['N','Ver lo que suena'],['?','Abrir esta guía'],['ESC','Cerrar menús y cola']]){
@@ -106,7 +95,7 @@ function close(){page=null;shell.hidden=true}
 function updateFavorite(){const node=$('tm-listening-save'),track=currentTrack();if(!node||!track)return;const saved=window.TransmissionFavorites?.isSaved(track);node.textContent=saved?'♥ GUARDADA':'♡ GUARDAR';node.setAttribute('aria-pressed',String(!!saved))}
 function arm(minutes){
  if(!rt.account){rt.notify('Conecta Spotify para usar el temporizador.');return}
- timer={end:Date.now()+minutes*60000,account:rt.account.id};tick();rt.notify('La música se pausará en '+minutes+' minutos.');
+ timer={end:Date.now()+minutes*60000,account:rt.account.id,minutes};tick();rt.notify('Temporizador: '+minutes+' min.');
 }
 function cancelTimer(){timer=null;tick()}
 async function finishTimer(){
@@ -125,8 +114,9 @@ function tick(){
  if(timer&&rt.account?.id!==timer.account)timer=null;
  if(timer&&Date.now()>=timer.end){void finishTimer();return}
  const remaining=timer?Math.max(0,timer.end-Date.now()):0,badge=$('tm-timer-status');badge.hidden=!timer;badge.textContent=timer?'PAUSA EN '+ui.format(remaining):'';
- $('tm-timer-indicator').hidden=!timer||page==='escuchando';$('tm-timer-remaining').textContent=ui.format(remaining);
- const timerStatus=$('tm-sleep-status');if(timerStatus){timerStatus.textContent=firing?'PAUSANDO…':timer?'LA MÚSICA SE PAUSA EN '+ui.format(remaining):'ELIGE CUÁNDO PAUSAR';$('tm-sleep-cancel').hidden=!timer;document.querySelectorAll('.tm-sleep-choice').forEach(node=>node.disabled=!rt.account||firing)}
+ const timerStatus=$('tm-sleep-status');timerStatus.hidden=!timer&&!firing;timerStatus.textContent=firing?'…':ui.format(remaining);
+ $('tm-sleep-select').disabled=!rt.account||firing;$('tm-sleep-select').value=timer?String(timer.minutes):'0';
+ const more=$('tm-more');more.classList.toggle('tm-timer-active',!!timer);more.title=timer?'Temporizador: '+ui.format(remaining):'Más opciones';
  if(page!=='escuchando')return;
  const play=$('tm-listening-play');if(!play)return;
  const playing=String(!!state?.playing);
@@ -156,6 +146,7 @@ document.addEventListener('keydown',event=>{
 });
 window.TransmissionListening={show,close};
 $('player-art').onclick=()=>window.TransmissionPages.navigate('#/escuchando');
-$('tm-timer-cancel').onclick=cancelTimer;
+$('tm-sleep-select').onchange=event=>{const minutes=Number(event.target.value);if(minutes)arm(minutes);else cancelTimer();$('tm-options').hidden=true;$('tm-more').setAttribute('aria-expanded','false')};
+tick();
 setInterval(tick,1000);
 })();
