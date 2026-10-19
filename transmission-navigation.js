@@ -14,7 +14,8 @@ function parse(hash){
  if(kind==='explorar')return {kind:'search',query:'',filter:'track',title:'EXPLORAR'};
  if(kind==='buscar')return {kind:'search',query:(params.get('q')||'').slice(0,200),filter:filters.includes(params.get('tipo'))?params.get('tipo'):'track',title:'BÚSQUEDA'};
  if(['artista','album','playlist'].includes(kind)&&valid(parts[1]))return {kind:kind==='artista'?'artist':kind,id:parts[1],name:(params.get('nombre')||'').slice(0,200),title:kind==='artista'?'ARTISTA':kind==='album'?'ÁLBUM':'PLAYLIST'};
- const names={playlists:'MIS LISTAS',guardadas:'ME GUSTA',escuchando:'ESCUCHANDO',historial:'ÚLTIMAS ESCUCHAS',rotacion:'EN ROTACIÓN',atajos:'GUÍA Y ATAJOS'};
+ if(kind==='rotacion')return {kind,title:'EN ROTACIÓN',period:['short_term','medium_term','long_term'].includes(params.get('periodo'))?params.get('periodo'):'short_term',type:params.get('vista')==='artists'?'artists':'tracks'};
+ const names={playlists:'MIS LISTAS',guardadas:'ME GUSTA',escuchando:'ESCUCHANDO',historial:'ÚLTIMAS ESCUCHAS',discos:'DISCOS GUARDADOS',atajos:'GUÍA Y ATAJOS'};
  if(names[kind])return {kind,title:names[kind]};
  return {kind:'missing',title:'PÁGINA NO ENCONTRADA'};
 }
@@ -25,7 +26,7 @@ function catalogURL(state){
 function rememberState(hash,state){snapshots.set(hash,state);if(snapshots.size>30)snapshots.delete(snapshots.keys().next().value)}
 function updateNavigation(){
  for(const link of document.querySelectorAll('#main-nav a,#tm-page-links a')){
-   const href=link.getAttribute('href'),match=href===activeHash||(href==='#/explorar'&&['search','artist','album'].includes(current?.kind))||(href==='#/playlists'&&current?.kind==='playlist');
+   const href=link.getAttribute('href'),match=href===activeHash||(href==='#/explorar'&&['search','artist','album'].includes(current?.kind))||(href==='#/playlists'&&current?.kind==='playlist')||(href==='#/rotacion'&&current?.kind==='rotacion');
    link.classList.toggle('is-current',!!match);if(match)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
  }
  catalog?.syncNavigation?.();
@@ -33,6 +34,7 @@ function updateNavigation(){
 function closeViews(){
  catalog?.close({routed:true});library?.close({routed:true});window.TransmissionTaste?.closeLikedAll({routed:true});
  window.TransmissionListening?.close();window.TransmissionArtist?.close();window.TransmissionSearch?.close();window.TransmissionTrackActions?.close();
+ window.TransmissionArchive?.close();
  $('tm-options').hidden=true;$('tm-more').setAttribute('aria-expanded','false');
 }
 async function render(hash,restoring=false){
@@ -58,6 +60,7 @@ async function render(hash,restoring=false){
      const item=snapshots.get(hash)?.item||(rt.playlists||[]).find(item=>item.id===current.id)||{id:current.id,name:current.name||'Playlist'};
      await library?.openDetail(item,{routed:true});
    }else if(current.kind==='guardadas')void window.TransmissionTaste?.openLikedAll({routed:true});
+   else if(['discos','rotacion'].includes(current.kind))window.TransmissionArchive?.show(current);
    else window.TransmissionListening?.show(current.kind);
  }else document.title='TRANSMISSION — Personal music archive';
  if(request!==renderId)return;

@@ -79,6 +79,8 @@ function moreButton(state,load){
  button.onclick=()=>void load(true);content.append(button);
 }
 function browse(){
+ const personal=make('nav','tm-explore-personal');personal.setAttribute('aria-label','Explorar mi cuenta');
+ for(const [label,href] of [['TUS DISCOS','#/discos'],['TUS CANCIONES Y ARTISTAS','#/rotacion'],['HISTORIAL','#/historial']]){const link=make('a','',label+' ↗');link.href=href;personal.append(link)}content.append(personal);
  const recent=recentSearches();
  if(recent.length){
    const head=heading('BÚSQUEDAS RECIENTES');

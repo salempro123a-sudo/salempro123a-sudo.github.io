@@ -8,21 +8,23 @@
   <link rel="stylesheet" href="./transmission.css?v=20261019catalog1">
   <link rel="stylesheet" href="./transmission-catalog.css?v=20261019catalog1">
   <link rel="stylesheet" href="./transmission-pages.css?v=20261019pages1">
+  <link rel="stylesheet" href="./transmission-archive.css?v=20261019archive1">
   <script defer src="./spotify-auth.js?v=20261019catalog1"></script>
-  <script defer src="./spotify-editorial.js?v=20261019catalog1"></script>
+  <script defer src="./spotify-editorial.js?v=20261019archive1"></script>
   <script defer src="./spotify-controls.js?v=20261019catalog1"></script>
-  <script defer src="./spotify-taste.js?v=20261019pages1"></script>
+  <script defer src="./spotify-taste.js?v=20261019archive1"></script>
   <script defer src="./spotify-library.js?v=20261019pages1"></script>
   <script defer src="./spotify-polish.js?v=20261019catalog1"></script>
   <script defer src="./spotify-artist.js?v=20261019catalog1"></script>
   <script defer src="./spotify-queue.js?v=20261019pages1"></script>
   <script defer src="./spotify-favorites.js?v=20261019catalog1"></script>
   <script defer src="./spotify-track-actions.js?v=20261019catalog1"></script>
-  <script defer src="./spotify-catalog.js?v=20261019pages1"></script>
+  <script defer src="./spotify-catalog.js?v=20261019archive1"></script>
   <script defer src="./spotify-search.js?v=20261019pages1"></script>
-  <script defer src="./transmission-ui.js?v=20261019pages1"></script>
-  <script defer src="./transmission-listening.js?v=20261019pages1"></script>
-  <script defer src="./transmission-navigation.js?v=20261019pages1"></script>
+  <script defer src="./transmission-ui.js?v=20261019archive1"></script>
+  <script defer src="./transmission-listening.js?v=20261019archive1"></script>
+  <script defer src="./transmission-archive.js?v=20261019archive1"></script>
+  <script defer src="./transmission-navigation.js?v=20261019archive1"></script>
 </head><body>
 <a class="skip-link" href="#main">Saltar al contenido</a>
 <header class="site-header" id="top">
@@ -46,7 +48,7 @@
 </header>
 <div class="tm-page-masthead" id="tm-page-masthead" hidden>
   <div class="tm-page-crumb"><a href="#top">INICIO</a><span aria-hidden="true">/</span><span id="tm-page-label" tabindex="-1"></span></div>
-  <nav class="tm-page-links" id="tm-page-links" aria-label="Herramientas de escucha"><a href="#/escuchando">AHORA</a><a href="#/historial">HISTORIAL</a><a href="#/atajos">GUÍA Y ATAJOS</a></nav>
+  <nav class="tm-page-links" id="tm-page-links" aria-label="Herramientas de escucha"><a href="#/escuchando">AHORA</a><a href="#/discos">DISCOS</a><a href="#/historial">HISTORIAL</a><a href="#/atajos">GUÍA Y ATAJOS</a></nav>
   <span class="tm-timer-status" id="tm-timer-status" hidden></span>
 </div>
 <main id="main">
@@ -58,8 +60,11 @@
     <div class="slider-footer"><div class="slider-progress" id="slider-progress" aria-label="Posición del carrusel"><span id="progress-fill"></span></div><span class="slider-count" id="slider-count"></span><div class="slider-controls"><button id="prev-slide" aria-label="Canción anterior en carrusel">‹</button><button id="pause-slide" aria-label="Reproducir la canción seleccionada" disabled>▶</button><button id="next-slide" aria-label="Siguiente canción en carrusel">›</button></div></div>
   </div></div>
   <aside class="mixtape-rail" id="mixtapes" aria-label="Playlists y selecciones personales">
-    <div class="rail-head"><button id="tm-rail-open" class="tm-rail-open" type="button" aria-label="Abrir todas mis listas">+</button><div class="rail-heading">MIS<br>LISTAS</div><div class="tm-rail-actions"><button id="tm-station-play" type="button">▶ MI ROTACIÓN</button><button id="tm-now-play" type="button"><span>▶ PARA AHORA</span><small id="tm-now-caption" hidden></small></button></div></div>
-    <button class="rail-all" id="rail-all" type="button">VER TODAS MIS LISTAS <span aria-hidden="true">›</span></button>
+    <header class="rail-head"><h2 class="rail-heading">MIS LISTAS</h2><button id="tm-rail-open" class="tm-rail-open" type="button">ARCHIVO ↗</button></header>
+    <div id="tm-rail-grid" class="tm-rail-grid"></div>
+    <button class="rail-all" id="rail-all" type="button" hidden>VER TODAS MIS LISTAS</button>
+    <div class="tm-rail-actions"><button id="tm-station-play" type="button">▶ MI ROTACIÓN</button><button id="tm-now-play" type="button"><span>▶ PARA AHORA</span><small id="tm-now-caption" hidden></small></button></div>
+    <a class="tm-rail-albums" href="#/discos">DISCOS GUARDADOS <span aria-hidden="true">↗</span></a>
   </aside>
 </section>
 <section id="tm-spotify-embed" class="tm-spotify-embed" hidden aria-label="Reproductor oficial de Spotify">
@@ -217,6 +222,7 @@
  </div>
 </div>
 <section id="tm-listening-page" class="tm-listening-page" role="main" aria-label="Tu sesión de escucha" hidden><div id="tm-listening-content" class="tm-listening-content"></div></section>
+<section id="tm-personal-page" class="tm-personal-page" role="main" aria-label="Archivo personal" hidden><div id="tm-personal-content" class="tm-personal-content"></div></section>
 <div id="tm-artist-modal" class="tm-artist-modal" hidden>
  <div class="tm-artist-body" role="dialog" aria-modal="true" aria-labelledby="tm-artist-title">
   <div class="tm-artist-top"><h2 id="tm-artist-title"></h2><button id="tm-artist-close" type="button" aria-label="Cerrar artista">✕</button></div>

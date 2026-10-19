@@ -59,14 +59,26 @@ function renderUpcoming(){
  tracks.slice(0,4).forEach((track,index)=>section.append(ui.row(track,{tracks,index,number:index+1})));
  if(!tracks.length)section.append(link('BUSCAR MÚSICA +','#/explorar','tm-catalog-button'));
 }
-function renderCollection(){
+function renderHistory(){
  if(rt.account?.id!==recentAccount){recentAccount=rt.account?.id;sessionRecent=[]}
- const rotation=page==='rotacion',source=rotation?rt.accountTracks:[...sessionRecent,...(rt.recent||[])].filter((track,index,all)=>all.findIndex(item=>item.id===track.id)===index).slice(0,50);
- title('ARCHIVO PERSONAL',rotation?'EN ROTACIÓN':'ÚLTIMAS ESCUCHAS',rotation?'Tu selección habitual. Elige por dónde seguir.':'Vuelve a una canción que acabas de escuchar.');
- const tracks=source||[];
- if(!tracks.length){empty(rt.account?'Todavía no hay canciones disponibles en esta selección.':'Conecta Spotify para abrir tu archivo personal.');return}
- const head=make('div','tm-catalog-section-head');head.append(make('span','tm-listening-note',tracks.length+' CANCIONES'),button('▶ ESCUCHAR SELECCIÓN',event=>void ui.run(event.currentTarget,()=>rt.playSequence(tracks))));content.append(head);
- const list=make('div','tm-listening-tracklist');tracks.forEach((track,index)=>list.append(ui.row(track,{tracks,index,number:index+1})));content.append(list);
+ title('ARCHIVO PERSONAL','ÚLTIMAS ESCUCHAS','Vuelve a lo que escuchaste, por día y hora.');
+ const official=(rt.recentEvents||[]).filter(entry=>entry.track?.id),records=official.length?official:(rt.recent||[]).map(track=>({track}));
+ if(!records.length&&!sessionRecent.length){empty(rt.account?'Todavía no hay escuchas recientes disponibles.':'Conecta Spotify para abrir tu archivo personal.');return}
+ const groups=new Map(),today=new Date().toDateString(),dateFormat=new Intl.DateTimeFormat('es',{weekday:'long',day:'numeric',month:'long'}),timeFormat=new Intl.DateTimeFormat('es',{hour:'2-digit',minute:'2-digit',hour12:false});
+ if(sessionRecent.length)groups.set('EN ESTA SESIÓN',sessionRecent.map(track=>({track})));
+ for(const entry of records){
+   const date=Date.parse(entry.played_at),key=Number.isNaN(date)?'RECIENTES':new Date(date).toDateString()===today?'HOY':dateFormat.format(new Date(date)).toUpperCase();
+   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry);
+ }
+ for(const [label,entries] of groups){
+   const head=make('div','tm-history-heading');head.append(make('h2','',label));content.append(head);
+   const list=make('div','tm-listening-tracklist');
+   for(const entry of entries){
+     const row=ui.row(entry.track,{tracks:[entry.track]});row.classList.add('tm-history-row');
+     if(!Number.isNaN(Date.parse(entry.played_at))){const time=make('time','tm-history-time',timeFormat.format(new Date(entry.played_at)));time.dateTime=entry.played_at;row.insertBefore(time,row.children[1])}
+     list.append(row);
+   }content.append(list);
+ }
 }
 function renderGuide(){
  title('A MANO','GUÍA Y ATAJOS','Todo a un gesto de distancia.');
@@ -85,7 +97,7 @@ function renderGuide(){
 function render(){
  content.replaceChildren();seeking=false;
  if(page==='escuchando')renderNow();
- else if(['rotacion','historial'].includes(page))renderCollection();
+ else if(page==='historial')renderHistory();
  else if(page==='atajos')renderGuide();
  else{title('TRANSMISSION','NO ENCONTRAMOS ESTA PÁGINA');empty('Vuelve al archivo para seguir explorando.')}
 }

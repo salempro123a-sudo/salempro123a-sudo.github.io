@@ -259,42 +259,24 @@ function renderTiles(tracks){
   });
 }
 function renderRail(items){
-  const rail=$('mixtapes'),anchor=$('rail-all');
-  rail.querySelectorAll('.rail-item').forEach(x=>x.remove());
-  if(!items.length){
-    const prompts=[
-      ['♫','LISTAS','','art-pool'],
-      ['◌','ME GUSTA','','art-focus'],
-      ['⌁','ÚLTIMAS ESCUCHAS','','art-low'],
-      ['✳','COMPARTIR','','art-feel']
-    ];
-    rail.style.setProperty('--tm-rail-rows','2');
-    prompts.forEach((p,i)=>{
-      const button=create('button','rail-item');button.type='button';
-      const cover=create('span','rail-item-cover '+p[3],p[0]);
-      const label=create('span','rail-item-label');label.append(document.createTextNode(p[1]));
-      button.append(cover,label,create('span','rail-item-arrow','↗'));
-      button.onclick=()=>{
-        if(i===3){$('support').scrollIntoView({behavior:'smooth'});return}
-        if(!account){$('saved-trigger').click();return}
-        if(i===0)window.TransmissionLibrary?.open?.();
-        else if(i===1)$('liked').scrollIntoView({behavior:'smooth'});
-        else $('recent-items').scrollIntoView({behavior:'smooth'});
-      };
-      rail.insertBefore(button,anchor);
-    });return;
+  const grid=$('tm-rail-grid');grid.replaceChildren();
+  const visible=items.filter(pl=>pl?.id).slice(0,4);grid.dataset.count=String(visible.length);
+  if(!visible.length){
+    const message=create('p','tm-rail-empty',account?'No hay playlists disponibles en tu archivo.':'Conecta Spotify para abrir tus playlists.');
+    grid.append(message);return;
   }
-  const visible=items.slice(0,7);
-   rail.style.setProperty('--tm-rail-rows',String(Math.max(2,Math.ceil((visible.length+2)/3))));
    visible.forEach((pl,i)=>{
     const button=create('button','rail-item');button.type='button';
+    button.title=pl.name||'Playlist';
+    button.setAttribute('aria-label','Abrir playlist '+(pl.name||'Playlist'));
     const cover=create('span','rail-item-cover');cover.classList.add('tm-rail-image');
     const u=safeArt(pl?.images?.[0]?.url);if(u)cover.style.backgroundImage='url("'+u+'")';else cover.textContent='♫';
     const label=create('span','rail-item-label');
-    label.append(document.createTextNode(pl.name||'PLAYLIST'),create('small','',(pl.items?.total??pl.tracks?.total??'—')+' CANCIONES'));
-    button.append(cover,label,create('span','rail-item-arrow','▶'));
+    const count=pl.items?.total??pl.tracks?.total;
+    label.append(create('strong','',pl.name||'PLAYLIST'),create('small','',Number.isFinite(count)?count+' CANCIONES':pl.owner?.display_name||'PLAYLIST'));
+    button.append(cover,label,create('span','rail-item-arrow','↗'));
     button.onclick=()=>window.TransmissionLibrary?.openDetail?.(pl)??void playPlaylist(pl);
-    rail.insertBefore(button,anchor);
+    grid.append(button);
   });
 }
 function renderRecent(tracks){
@@ -928,6 +910,7 @@ window.TransmissionRuntime={
   get accountTracks(){return [...accountTracks]},
   get playlists(){return [...list.playlists]},
   get recent(){return [...list.recent]},
+  get recentEvents(){return recentEvents.map(entry=>({...entry}))},
   refreshPublic:loadHome
 };
 try{

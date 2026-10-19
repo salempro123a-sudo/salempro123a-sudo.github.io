@@ -19,6 +19,21 @@ Cada visitante autorizado carga su propia rotación, playlists, favoritas, histo
 - `spotify-catalog.js`, `spotify-search.js` y `spotify-track-actions.js`: búsqueda paginada, navegación entre artistas y álbumes, y acciones por canción.
 - `transmission-navigation.js` y `transmission-pages.css`: páginas del archivo, direcciones compartibles e historial del navegador.
 - `transmission-listening.js`: ficha de escucha, historial de la sesión, guía y temporizador local.
+- `transmission-archive.js` y `transmission-archive.css`: discos guardados, afinidad por periodo y composición del bloque de playlists.
+
+## Datos personales de la cuenta
+
+El bloque **Mis listas** contiene únicamente playlists. La cabecera no repite una portada como fondo; las carátulas conservan su proporción, los títulos aparecen debajo y los accesos de reproducción tienen su propio espacio. Se muestran hasta cuatro listas y el botón **Archivo** abre el resto. Una única playlist utiliza una fila con carátula y texto separados.
+
+**Discos guardados** (`#/discos`) lee los álbumes de la biblioteca, con artistas, año de publicación y fecha de guardado. Se pueden filtrar los discos cargados, cargar otros veinte y abrir su ficha para escucharlos o añadirlos a la cola.
+
+**En rotación** (`#/rotacion`) permite consultar canciones o artistas por afinidad durante cuatro semanas, seis meses o aproximadamente un año. El tipo y el periodo forman parte de la dirección. Los resultados mantienen el orden que entrega Spotify; no representan un recuento exacto de reproducciones.
+
+**Historial** muestra las fechas y horas de las escuchas recientes que ya se cargan al abrir la cuenta, agrupadas por día. Conserva las repeticiones de una canción en los registros de Spotify. Las canciones observadas durante la sesión se muestran aparte.
+
+Las nuevas lecturas usan los permisos que ya solicita la aplicación: `user-library-read` y `user-top-read`. Los discos se solicitan al abrir su página y al pulsar más; los rankings se consultan al elegir tipo y periodo. Hay caché en memoria por cuenta durante cinco minutos y se mantiene el manejo existente de límites. No se amplían OAuth ni sus permisos ni se cambia la inicialización del reproductor.
+
+Referencias oficiales consultadas: [álbumes guardados](https://developer.spotify.com/documentation/web-api/reference/get-users-saved-albums), [afinidad por periodo](https://developer.spotify.com/documentation/web-api/reference/get-users-top-artists-and-tracks) e [historial reciente](https://developer.spotify.com/documentation/web-api/reference/get-recently-played).
 
 ## Páginas del archivo
 

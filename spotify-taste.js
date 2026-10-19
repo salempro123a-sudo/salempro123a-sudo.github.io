@@ -156,32 +156,7 @@ function closeLikedAll(options={}){
  modalFocus?.focus?.();
 }
 function fillPlaylistRail(){
- if(!rt)return;
- const source=unique(liked.length?liked:(rt.account?rt.accountTracks:rt.publicSnapshot?.tracks||[]));
- if(!source.length)return;
- const rail=el('mixtapes'),anchor=el('rail-all');
- if(!rail||!anchor)return;
- const playlists=(rt.playlists||[]).length;
- // When no playlists were available, remove only decorative placeholders.
- if(!playlists)rail.querySelectorAll('.rail-item').forEach(node=>node.remove());
- const previous=rail.querySelectorAll('.tm-rail-favorite').length;
- if(previous)rail.querySelectorAll('.tm-rail-favorite').forEach(node=>node.remove());
- const remaining=Math.max(0,7-Math.min(playlists,7));
- if(!playlists){
-   const heading=rail.querySelector('.rail-heading');
-   if(heading)heading.textContent='ESCUCHAR';
- }
- for(const track of source.slice(0,remaining)){
-   const button=create('button','rail-item tm-rail-favorite');
-   button.type='button';button.title='Escuchar '+track.name;
-   const cover=create('span','rail-item-cover tm-rail-image');
-   if(image(track))cover.style.backgroundImage='url("'+image(track)+'")';
-   const label=create('span','rail-item-label');
-   label.append(document.createTextNode(track.name),create('small','',artists(track)));
-   button.append(cover,label,create('span','rail-item-arrow','▶'));
-   button.onclick=()=>void rt.playTrack(track);
-   rail.insertBefore(button,anchor);
- }
+ // Playlist covers, labels and counts are owned by renderRail.
  window.TransmissionUI?.refresh?.();
 }
 
