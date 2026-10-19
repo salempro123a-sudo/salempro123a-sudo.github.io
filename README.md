@@ -17,6 +17,27 @@ Cada visitante autorizado carga su propia rotación, playlists, favoritas, histo
 - `spotify-taste.js`, `spotify-library.js`, `spotify-search.js` y `spotify-artist.js`: paginación, ordenación, archivo de listas, búsqueda y artistas.
 - `spotify-polish.js` y `transmission-ui.js`: composición y estados visuales; no generan audio simulado.
 - `spotify-catalog.js`, `spotify-search.js` y `spotify-track-actions.js`: búsqueda paginada, navegación entre artistas y álbumes, y acciones por canción.
+- `transmission-navigation.js` y `transmission-pages.css`: páginas del archivo, direcciones compartibles e historial del navegador.
+- `transmission-listening.js`: ficha de escucha, historial de la sesión, guía y temporizador local.
+
+## Páginas del archivo
+
+La referencia de esta ampliación es el ZIP `NTS-extraida.zip` entregado por el usuario. Se revisaron su `index.html`, `css/style.min.5eb6b8e09ade1844.css` y `js/app.min.73ed3e4d94996f24.js`: la página `search-page`, sus pestañas `nts-toggle`, las filas `search-results-v2`, la navegación y el reproductor expandido con `up-next`. Se adaptaron la jerarquía tipográfica, los separadores y la organización del archivo a la identidad existente de TRANSMISSION.
+
+Buscar, explorar, abrir artistas y álbumes, listas y favoritas son páginas con dirección propia. La portada se sustituye por la página elegida; se conservan la cabecera y el reproductor. Las URL usan rutas después de `#`, compatibles con GitHub Pages y con enlaces directos, recarga y los botones atrás/adelante. Navegar mantiene la misma sesión de audio.
+
+- `#/explorar`: géneros, artistas personales, canciones y búsquedas recientes.
+- `#/buscar?q=...&tipo=track`: resultados; también admite `artist`, `album` y `playlist`.
+- `#/artista/ID?nombre=...`, `#/album/ID?nombre=...` y `#/playlist/ID?nombre=...`: fichas enlazables.
+- `#/playlists`, `#/guardadas`, `#/rotacion` y `#/historial`: archivo personal.
+- `#/escuchando`: carátula, transporte y posición, álbum y artistas, guardar, compartir, siguientes y temporizador. También se abre tocando la carátula del reproductor inferior.
+- `#/atajos`: guía de uso y teclado.
+
+Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Se pueden borrar desde Explorar. La búsqueda completa se envía al pulsar Enter o Buscar; la cabecera conserva sus resultados rápidos. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
+
+El temporizador permite pausar en 15, 30, 45 o 60 minutos. Sigue activo al navegar, se puede cancelar desde su indicador y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
+
+La ampliación conserva OAuth, su configuración, los permisos solicitados, la renovación de sesión y la integración del Web Playback SDK. No añade servicios musicales externos ni credenciales.
 
 ## Navegar y preparar la cola
 
@@ -28,7 +49,7 @@ Las selecciones iniciadas dentro de TRANSMISSION permiten subir, bajar, quitar c
 
 Una cola controlada desde Spotify se consulta y admite adiciones mediante el endpoint oficial. Su interfaz no muestra controles para quitar o reordenar, porque Spotify no ofrece esos endpoints. Activar el aleatorio nativo en una selección ya cargada pasa la cola a esa vista de Spotify. Antes de iniciar una reproducción se puede preparar una cola local sin arrancar el audio. Los datos de cola y las cachés permanecen en el navegador y no se publican.
 
-Atajos fuera de campos y botones: `/` enfoca la búsqueda, espacio reproduce/pausa, izquierda/derecha avanza cinco segundos y Mayús + izquierda/derecha cambia de canción. Escape cierra el menú o panel activo.
+Atajos fuera de campos y botones: `/` enfoca la búsqueda, espacio reproduce/pausa, izquierda/derecha avanza cinco segundos y Mayús + izquierda/derecha cambia de canción. `Q` abre la cola, `N` abre lo que suena y `?` abre la guía. Escape cierra menús y cola; las páginas se recorren con sus enlaces y con el historial del navegador.
 
 La búsqueda utiliza páginas de diez resultados y las funciones de reproducción requieren los permisos y el plan admitidos por Spotify. Referencias: [migración de la API](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide), [añadir a la cola](https://developer.spotify.com/documentation/web-api/reference/add-to-queue).
 

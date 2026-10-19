@@ -23,7 +23,7 @@ async function lookup(){
  }catch(error){if(seq!==serial||!opened)return;results.replaceChildren();message('No fue posible buscar. Inténtalo de nuevo.');footer();rt.status('Búsqueda: '+error.message,true)}
 }
 function expand(){
- if(window.TransmissionCatalog?.isOpen){window.TransmissionCatalog.search(field.value.trim());return}
+ if(window.TransmissionCatalog?.isOpen){$('tm-catalog-query').focus();return}
  const changed=!opened;opened=true;host.classList.add('tm-search-open');trigger.setAttribute('aria-expanded','true');field.focus();if(changed)void lookup();
 }
 trigger.setAttribute('aria-controls','tm-inline-results');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-label','Buscar música');trigger.onclick=expand;

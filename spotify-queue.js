@@ -48,7 +48,8 @@ async function updateQueue(force=false){
  }
  if(seq!==serial||panel.hidden)return;
  container.replaceChildren();$('tm-queue-clear').hidden=!managed||!tracks.length;$('tm-queue-clear').disabled=editing;
- $('tm-queue-count').textContent=tracks.length+' '+(tracks.length===1?'CANCIÓN':'CANCIONES');
+ const timed=tracks.length&&tracks.every(track=>Number(track.duration_ms)>0),duration=tracks.reduce((sum,track)=>sum+(Number(track.duration_ms)||0),0);
+ $('tm-queue-count').textContent=tracks.length+' '+(tracks.length===1?'CANCIÓN':'CANCIONES')+(timed?' · '+window.TransmissionTrackActions.format(duration):'');
  if(current){label('AHORA');const row=make('div','tm-mini-queue-item is-current'),name=make('span','tm-mini-queue-name');name.append(make('strong','',current.name),make('small','',(current.artists||[]).map(artist=>artist.name).join(', ')));row.append(make('span','tm-mini-queue-index','▶'),name);container.append(row)}
  label(managed?(current?'SIGUIENTES':'LISTA PARA REPRODUCIR'):'A CONTINUACIÓN EN SPOTIFY');
  tracks.forEach((track,index)=>queueRow(track,index,tracks,managed));

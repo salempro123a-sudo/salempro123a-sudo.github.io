@@ -85,7 +85,10 @@ function renderLikedAll(){
    listen.onclick=()=>void playLikedFrom(t);
    host.append(card);
  }
- if(!tracks.length)host.append(create('p','tm-liked-empty','Sin coincidencias.'));
+ if(!tracks.length){
+   host.append(create('p','tm-liked-empty',value?'Sin coincidencias.':accountConnected?'Todavía no hay canciones guardadas.':'Conecta Spotify para abrir tus canciones guardadas.'));
+   if(!accountConnected){const connect=create('button','tm-catalog-button','CONECTAR SPOTIFY');connect.type='button';connect.onclick=()=>el('saved-trigger').click();host.append(connect)}
+ }
  el('tm-liked-total').textContent=tracks.length+' / '+(likesTotal||liked.length);
  el('tm-liked-load').hidden=!(accountConnected&&canFetchMore);
 }
@@ -125,9 +128,10 @@ async function playLikedFrom(track){
  const index=tracks.findIndex(t=>t.id===track.id);
  return index>=0?rt.playSequence(tracks,index):false;
 }
-async function openLikedAll(){
+async function openLikedAll(options={}){
+ if(!options.routed&&window.TransmissionPages)return window.TransmissionPages.liked();
  const dialog=el('tm-liked-modal');
- if(!dialog||!liked.length)return;
+ if(!dialog)return;
  modalFocus=document.activeElement;
  modalOpen=true;dialog.hidden=false;dialog.setAttribute('aria-hidden','false');
  window.TransmissionUI?.syncViews?.();
@@ -143,7 +147,9 @@ async function openLikedAll(){
  }
  renderLikedAll()
 }
-function closeLikedAll(){
+function closeLikedAll(options={}){
+ if(!options.routed&&window.TransmissionPages?.isLiked)return window.TransmissionPages.home();
+ if(el('tm-liked-modal').hidden)return;
  modalOpen=false;
  const dialog=el('tm-liked-modal');dialog.hidden=true;dialog.setAttribute('aria-hidden','true');
  window.TransmissionUI?.syncViews?.();
@@ -489,8 +495,8 @@ more.onclick=()=>void loadNext();
 el('tm-liked-prev').onclick=previousLiked;
 el('tm-liked-all').onclick=()=>void openLikedAll();
 el('tm-liked-close').onclick=closeLikedAll;
-el('tm-liked-modal').addEventListener('click',e=>{if(e.target===el('tm-liked-modal'))closeLikedAll()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen)closeLikedAll()});
+el('tm-liked-modal').addEventListener('click',e=>{if(e.target===el('tm-liked-modal')&&!window.TransmissionPages?.isLiked)closeLikedAll()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen&&!window.TransmissionPages?.isLiked)closeLikedAll()});
 el('tm-liked-search').addEventListener('input',renderLikedAll);
 async function changeLikedOrder(value){
  likedOrder=value;page=0;
@@ -534,6 +540,7 @@ window.addEventListener?.('tm:account-track',event=>{
  });
  window.addEventListener?.('resize',render);
 window.TransmissionTaste={
+ openLikedAll,
  closeLikedAll,
  arrangeSession,
  getLikedForExport:()=>accountConnected?unique(liked).slice(0,40):[],

@@ -16,6 +16,7 @@ function collage(id,items){
  host.replaceChildren(...pictures.map(url=>{const tile=document.createElement('span');tile.style.backgroundImage='url("'+url+'")';return tile}));
 }
 function refresh(){
+ window.TransmissionPages?.accountChanged?.();
  document.body.classList.toggle('tm-connected',!!rt.account);
  const next=rt.upcomingTrack;
  $('tm-next-song').textContent=next?.name||'MI ROTACIÓN';
@@ -71,7 +72,7 @@ document.addEventListener('keydown',event=>{
 });
 document.querySelectorAll('#main-nav a').forEach(link=>link.addEventListener('click',()=>{$('menu-toggle').setAttribute('aria-expanded','false')}));
 function syncViews(){
- const browsing=!!document.querySelector('.tm-catalog:not([hidden]),.tm-library-screen:not([hidden]),.tm-liked-modal:not([hidden])');
+ const browsing=!!document.querySelector('.tm-catalog:not([hidden]),.tm-library-screen:not([hidden]),.tm-liked-modal:not([hidden]),.tm-listening-page:not([hidden])');
  $('main').inert=browsing;document.querySelector('.footer').inert=browsing;
  document.body.classList.toggle('tm-browse-open',browsing);
 }

@@ -27,25 +27,32 @@ function render(){
    card.onclick=()=>void openDetail(p);
    grid.append(card);
  }
- if(!found.length)grid.append(create('p','tm-liked-empty',items.length?'No hay coincidencias.':'No hay listas disponibles.'));
+ if(!found.length){
+   grid.append(create('p','tm-liked-empty',items.length?'No hay coincidencias.':rt.account?'No hay listas disponibles.':'Conecta Spotify para abrir tus listas.'));
+   if(!rt.account&&!items.length){const connect=create('button','tm-catalog-button','CONECTAR SPOTIFY');connect.type='button';connect.onclick=()=>$('saved-trigger').click();grid.append(connect)}
+ }
  $('tm-library-count').textContent=items.length+(total>items.length?' / '+total:'')+' LISTAS';
  more.hidden=!next||!rt.account;
  more.disabled=loading;
 }
 function browsing(activeBrowse){
+ shell.classList.toggle('has-detail',!activeBrowse);
  detail.hidden=activeBrowse;
  grid.hidden=!activeBrowse;
  $('tm-library-bar').hidden=!activeBrowse;
  $('tm-library-bottom').hidden=!activeBrowse;
 }
 function open(event){
+ if(!event?.routed&&window.TransmissionPages)return window.TransmissionPages.library();
  lastFocus=event?.currentTarget||document.activeElement;
  if(!items.length){add(rt.playlists||rt.publicSnapshot?.playlists||[]);offset=items.length;total=items.length;next=!!rt.account&&items.length>=50}
  shell.hidden=false;shell.setAttribute('aria-hidden','false');
  window.TransmissionUI?.syncViews?.();
  browsing(true);render();search.focus();
 }
-function close(){
+function close(options={}){
+ if(!options.routed&&window.TransmissionPages?.isLibrary)return window.TransmissionPages.home();
+ if(shell.hidden)return;
  requestSerial++;
  shell.hidden=true;shell.setAttribute('aria-hidden','true');
  window.TransmissionUI?.syncViews?.();
@@ -126,9 +133,10 @@ async function loadTracks(){
    }
  }finally{if(serial===requestSerial){trackLoading=false;$('tm-playlist-next').disabled=false}}
 }
-async function openDetail(p){
+async function openDetail(p,options={}){
  if(!validId(p?.id))return;
- if(shell.hidden)open();
+ if(!options.routed&&window.TransmissionPages)return window.TransmissionPages.playlist(p);
+ if(shell.hidden)open({routed:true});
  requestSerial++;
  active=p;trackRows=[];trackOffset=0;trackNext=false;trackLoading=false;
  browsing(false);clearEmbed();
@@ -145,13 +153,13 @@ async function openDetail(p){
    await loadTracks();
  }else embedPlaylist(p);
 }
-$('tm-library-close').onclick=close;
-$('tm-playlist-back').onclick=()=>{requestSerial++;active=null;trackLoading=false;browsing(true);search.focus()};
+$('tm-library-close').onclick=()=>close();
+$('tm-playlist-back').onclick=()=>{if(window.TransmissionPages)return window.TransmissionPages.library();requestSerial++;active=null;trackLoading=false;browsing(true);search.focus()};
 $('tm-playlist-next').onclick=()=>void loadTracks();
 more.onclick=()=>void loadMore();
 search.oninput=render;
-shell.addEventListener('click',e=>{if(e.target===shell)close()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shell.hidden)close()});
+shell.addEventListener('click',e=>{if(e.target===shell&&!window.TransmissionPages?.isLibrary)close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shell.hidden&&!window.TransmissionPages?.isLibrary)close()});
 document.querySelectorAll('.tm-library-filters button').forEach(b=>b.onclick=()=>{
  mode=b.dataset.filter||'all';
  document.querySelectorAll('.tm-library-filters button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
