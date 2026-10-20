@@ -25,11 +25,12 @@ function close(options={}){
 }
 function navigation(){
  $('tm-catalog-back').disabled=window.TransmissionPages?!window.TransmissionPages.canBack:cursor<=0;$('tm-catalog-forward').disabled=window.TransmissionPages?!window.TransmissionPages.canForward:cursor>=history.length-1;
- const current=view();field.value=current?.query||'';
+ const current=view();
  shell.dataset.kind=current?.kind||'search';
  $('tm-catalog-title').hidden=current?.kind!=='search';
- $('tm-catalog-title').textContent=current?.kind==='search'?(current.query?'RESULTADOS PARA “'+current.query+'”':'EXPLORAR EL ARCHIVO'):current?.kind==='album'?'ÁLBUM':'ARTISTA';
- $('tm-catalog-tabs').hidden=current?.kind!=='search';
+ $('tm-catalog-title').textContent=current?.query||'EXPLORAR';
+ $('tm-catalog-title').classList.toggle('tm-visually-hidden',!!current?.query);
+ $('tm-catalog-tabs').hidden=current?.kind!=='search'||!current?.query;
  for(const button of document.querySelectorAll('#tm-catalog-tabs button')){const active=button.dataset.type===current?.filter;button.setAttribute('aria-pressed',String(active))}
 }
 function push(next,options={}){
@@ -37,7 +38,7 @@ function push(next,options={}){
  if(view())view().scroll=shell.scrollTop;
  history=history.slice(0,cursor+1);history.push(next);
  if(history.length>30)history.shift();cursor=history.length-1;
- ++serial;clearTimeout(timer);next.loading=false;reveal();navigation();shell.scrollTop=0;void render();
+ ++serial;clearTimeout(timer);next.loading=false;field.value=next.query||'';reveal();navigation();shell.scrollTop=0;void render();
 }
 function search(query='',filter='track'){
  query=String(query).trim().slice(0,200);
@@ -65,22 +66,29 @@ function message(text,action){
 function heading(title,meta=''){
  const head=make('div','tm-catalog-section-head');head.append(make('h3','',title));if(meta)head.append(make('span','',meta));content.append(head);return head;
 }
-function card(item,type){
+function card(item,type,options={}){
  const button=make('button','tm-catalog-card');button.type='button';
  const image=make('span','tm-catalog-art');const url=ui.art(item);if(url)image.style.backgroundImage='url("'+url+'")';
- image.append(make('span','tm-catalog-card-arrow','↗'));
- button.append(image,make('strong','',item.name),make('small','',type==='artist'?'ARTISTA':type==='album'?[ui.by(item),item.release_date?.slice(0,4)].filter(Boolean).join(' · '):item.owner?.display_name||'PLAYLIST'));
+ button.append(image,make('strong','',item.name));
+ const meta=type==='artist'?'':type==='album'?[options.discography?'':ui.by(item),item.release_date?.slice(0,4)].filter(Boolean).join(' · '):item.owner?.display_name||'';
+ if(meta)button.append(make('small','',meta));
  button.onclick=()=>type==='artist'?openArtist(item):type==='album'?openAlbum(item):openPlaylist(item);return button;
 }
-function rows(tracks,onPlay){const list=make('div','tm-catalog-songs');tracks.forEach((track,index)=>list.append(ui.row(track,{tracks,index,number:index+1,onPlay:onPlay?()=>onPlay(index):undefined})));content.append(list)}
-function moreButton(state,load){
+function rows(tracks,onPlay,options={}){
+ const list=make('div','tm-catalog-songs');
+ tracks.forEach((track,index)=>list.append(ui.row(track,{tracks,index,number:index+1,noCover:options.album,albumSubtitle:options.artist,onPlay:onPlay?()=>onPlay(index):undefined})));
+ content.append(list);
+}
+function moreButton(state,load,label='CARGAR MÁS'){
  if(!state.next)return;
- const button=make('button','tm-catalog-more',state.loading?'CARGANDO…':'MÁS RESULTADOS ↓');button.type='button';button.disabled=state.loading;
- button.onclick=()=>void load(true);content.append(button);
+ const button=make('button','tm-catalog-more',state.loading?'CARGANDO…':label+' ↓');button.type='button';button.disabled=state.loading;button.dataset.catalogFocus='more';
+ button.onclick=async()=>{
+   const source=view(),count=content.querySelectorAll('.tm-song-row,.tm-catalog-card').length,restore=document.activeElement===button;
+   await load(true);
+   if(restore&&opened&&view()===source){const added=content.querySelectorAll('.tm-song-row,.tm-catalog-card')[count];(added?.querySelector('.tm-song-name')||added||content.querySelector('[data-catalog-focus="more"]'))?.focus({preventScroll:true})}
+ };content.append(button);
 }
 function browse(){
- const personal=make('nav','tm-explore-personal');personal.setAttribute('aria-label','Explorar mi cuenta');
- for(const [label,href] of [['TUS DISCOS','#/discos'],['TUS CANCIONES Y ARTISTAS','#/rotacion'],['HISTORIAL','#/historial']]){const link=make('a','',label+' ↗');link.href=href;personal.append(link)}content.append(personal);
  const recent=recentSearches();
  if(recent.length){
    const head=heading('BÚSQUEDAS RECIENTES');
@@ -89,63 +97,85 @@ function browse(){
    recent.forEach(query=>{const link=make('a','',query);link.href='#/buscar?'+new URLSearchParams({q:query});list.append(link)});
    content.append(list);
  }
- heading('POR GÉNERO');
+ heading('GÉNEROS');
  const tags=make('div','tm-catalog-genres');
  for(const [label,genre] of [['JAZZ','jazz'],['SOUL','soul'],['FUNK','funk'],['ELECTRÓNICA','electronic'],['AMBIENT','ambient'],['HIP HOP','hip-hop'],['ROCK','rock'],['INDIE','indie'],['CLÁSICA','classical'],['REGGAE','reggae'],['LATINA','latin'],['EXPERIMENTAL','experimental']]){
-   const button=make('button','',label);button.type='button';button.onclick=()=>search('genre:'+genre);tags.append(button);
+   const button=make('button','');button.type='button';button.append(make('span','',label),make('span','tm-genre-arrow','↗'));button.onclick=()=>search('genre:'+genre);tags.append(button);
  }
  content.append(tags);
  const artists=rt.accountArtists||[];
- if(artists.length){heading('TUS ARTISTAS');const grid=make('div','tm-catalog-grid');artists.slice(0,8).forEach(artist=>grid.append(card(artist,'artist')));content.append(grid)}
+ if(artists.length){const head=heading('TUS ARTISTAS');const all=make('a','tm-text-action','↗');all.href='#/rotacion?vista=artists';all.setAttribute('aria-label','Ver tus artistas');head.append(all);const grid=make('div','tm-catalog-grid');artists.forEach(artist=>grid.append(card(artist,'artist')));content.append(grid)}
  const tracks=(rt.recent?.length?rt.recent:rt.accountTracks).slice(0,10);
  if(tracks.length){heading(rt.recent?.length?'VOLVER A ESCUCHAR':'EN ROTACIÓN');rows(tracks)}
- else message(rt.account?'Busca una canción, un artista o un álbum.':'Conecta Spotify para buscar y preparar tu cola.',rt.account?null:{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
+ else if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
 }
 function renderSearch(state){
  if(!state.query){browse();return}
- heading(labels[state.filter],state.loaded?state.items.length+' / '+state.total:'');
+ if(!rt.account){message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});return}
+ if(state.match&&state.filter==='track'){
+   const match=make('button','tm-catalog-match');match.type='button';
+   const art=make('span','tm-catalog-match-art'),url=ui.art(state.match);if(url)art.style.backgroundImage='url("'+url+'")';
+   if(url)match.append(art);match.append(make('strong','',state.match.name),make('span','tm-catalog-match-arrow','↗'));
+   match.setAttribute('aria-label','Ver artista: '+state.match.name);match.onclick=()=>openArtist(state.match);content.append(match);
+ }
+ if(state.loaded){const count=make('div','tm-catalog-count',state.items.length+' / '+state.total);count.setAttribute('aria-label',state.items.length+' de '+state.total+' resultados');content.append(count)}
  if(state.items.length){
    if(state.filter==='track')rows(state.items);
    else{const grid=make('div','tm-catalog-grid');state.items.forEach(item=>grid.append(card(item,state.filter)));content.append(grid)}
  }
  if(state.loading&&!state.items.length)message('Buscando…');
- else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadSearch(false)});
- else if(state.loaded&&!state.items.length)message('Sin resultados. Prueba otro nombre o cambia el filtro.');
- moreButton(state,loadSearch);
+ else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadSearch(!!state.items.length)});
+ else if(state.loaded&&!state.items.length)message('Sin resultados.');
+ if(!state.error)moreButton(state,loadSearch);
 }
 async function loadSearch(append=false){
  const state=view();if(state?.kind!=='search'||!state.query||state.loading)return;
- const query=state.query,filter=state.filter,offset=append?state.offset:0,seq=++serial;
+ const query=state.query,filter=state.filter,seq=++serial;
  state.loading=true;state.requestId=seq;state.error='';content.setAttribute('aria-busy','true');renderCurrent();
  try{
-   const response=await request('/search?'+new URLSearchParams({q:query,type:filter,limit:'10',offset:String(offset)}));
-   if(seq!==serial||view()!==state||!opened)return;
-   const page=response?.[keys[filter]],raw=page?.items||[],known=new Set((append?state.items:[]).map(item=>item.id));
-   state.items=append?[...state.items]:[];
-   for(const item of raw)if(valid(item)&&!known.has(item.id)){known.add(item.id);state.items.push(item)}
-   state.offset=offset+raw.length;state.total=Number(page?.total)||state.items.length;
-   state.next=!!page?.next&&raw.length>0&&state.offset<state.total&&state.offset<1000;state.loaded=true;
+   if(!append){state.items=[];state.offset=0;state.match=null}
+   const known=new Set(state.items.map(item=>item.id));
+   for(let batch=0;batch<(filter==='track'?3:2);batch++){
+     const offset=state.offset,type=filter==='track'&&offset===0?'track,artist':filter;
+     const response=await request('/search?'+new URLSearchParams({q:query,type,limit:'10',offset:String(offset)}));
+     if(seq!==serial||view()!==state||!opened)return;
+     const page=response?.[keys[filter]],raw=page?.items||[];
+     if(type==='track,artist')state.match=(response?.artists?.items||[]).find(artist=>artist.name?.toLocaleLowerCase()===query.toLocaleLowerCase())||null;
+     for(const item of raw)if(valid(item)&&!known.has(item.id)){known.add(item.id);state.items.push(item)}
+     state.offset=offset+raw.length;state.total=Number(page?.total)||state.items.length;
+     state.next=!!page?.next&&raw.length>0&&state.offset<state.total&&state.offset<1000;state.loaded=true;
+     if(!state.next)break;
+   }
+   announce(state.items.length+' resultados');
  }catch(error){if(seq===serial&&view()===state){state.error=error.status===429?'Spotify ha pausado las consultas. Inténtalo cuando se restablezca el acceso.':error.message;rt.status('Catálogo: '+error.message,true)}}
  finally{if(state.requestId===seq)state.loading=false;if(seq===serial&&view()===state&&opened){content.setAttribute('aria-busy','false');renderCurrent()}}
 }
 function detailHeading(item,type,extra=''){
  const head=make('div','tm-catalog-detail-head'),cover=make('div','tm-catalog-detail-art');const url=ui.art(item);if(url)cover.style.backgroundImage='url("'+url+'")';
- const copy=make('div','tm-catalog-detail-copy');copy.append(make('span','tm-catalog-kind',type),make('h1','',item.name));
+ const copy=make('div','tm-catalog-detail-copy');copy.append(make('h1','',item.name));
+ if(type==='ARTISTA'&&!url){head.classList.add('tm-catalog-without-art');cover.hidden=true}
  if(extra)copy.append(make('p','',extra));head.append(cover,copy);content.append(head);return copy;
 }
 function detailActions(copy,state){
  const actions=make('div','tm-catalog-detail-actions');
- for(const [label,operation] of [['▶ ESCUCHAR',()=>playAlbum(state,0)],['+ AÑADIR ÁLBUM A LA COLA',async()=>{await allAlbumTracks(state);return rt.enqueueTracks(state.tracks)}]]){
-   const button=make('button','tm-catalog-button',label);button.type='button';button.disabled=!state.tracks?.length;button.onclick=()=>void ui.run(button,operation);actions.append(button);
+ for(const [label,title,operation] of [['▶ ESCUCHAR','Reproducir el álbum',()=>playAlbum(state,0)],['+','Añadir el álbum a la cola',async()=>{await allAlbumTracks(state);return rt.enqueueTracks(state.tracks)}]]){
+   const button=make('button','tm-catalog-button',label);button.type='button';button.title=title;button.setAttribute('aria-label',title);button.disabled=!state.tracks?.length;button.onclick=()=>void ui.run(button,operation);actions.append(button);
  }
- const artist=state.item.artists?.[0];if(artist?.name){const button=make('button','tm-catalog-button',artist.name.toUpperCase()+' ↗');button.type='button';button.onclick=()=>openArtist(artist);actions.append(button)}
  const link=make('a','tm-catalog-link','SPOTIFY ↗');link.href='https://open.spotify.com/album/'+state.item.id;link.target='_blank';link.rel='noopener noreferrer';actions.append(link);copy.append(actions);
 }
 function renderAlbum(state){
- const copy=detailHeading(state.item,'ÁLBUM',[ui.by(state.item),state.item.release_date?.slice(0,4),state.item.total_tracks?state.item.total_tracks+' CANCIONES':''].filter(Boolean).join(' · '));
- detailActions(copy,state);if(state.tracks?.length)rows(state.tracks,index=>playAlbum(state,index));
- if(state.loading)message('Cargando álbum…');else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadAlbum(state,true)});
- moreButton(state,()=>loadAlbum(state,true));
+ const copy=detailHeading(state.item,'ÁLBUM');
+ const credits=make('div','tm-catalog-credits');
+ for(const artist of state.item.artists||[]){const link=make(valid(artist)?'a':'span','',artist.name);if(valid(artist))link.href='#/artista/'+artist.id+'?'+new URLSearchParams({nombre:artist.name});credits.append(link)}
+ copy.append(credits);
+ const meta=[state.item.release_date?.slice(0,4),state.item.total_tracks?state.item.total_tracks+' CANCIONES':''];
+ if(state.loaded&&!state.next&&state.tracks?.length)meta.push(ui.format(state.tracks.reduce((sum,track)=>sum+(track.duration_ms||0),0)));
+ copy.append(make('p','',meta.filter(Boolean).join(' · ')));
+ detailActions(copy,state);if(state.tracks?.length)rows(state.tracks,index=>playAlbum(state,index),{album:true});
+ if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
+ else if(state.loading)message('CARGANDO…');else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadAlbum(state,!!state.loaded)});
+ if(!state.error)moreButton(state,()=>loadAlbum(state,true));
+ detailLayout(copy,'tm-album-layout');
 }
 async function loadAlbum(state,append=false){
  if(state.loading)return;const seq=++serial;state.loading=true;state.requestId=seq;state.error='';renderCurrent();
@@ -175,49 +205,108 @@ async function allAlbumTracks(state){
  try{await state.completing}finally{state.completing=null}
 }
 async function playAlbum(state,index){await allAlbumTracks(state);if(!opened||view()!==state)return false;return rt.playSequence(state.tracks,index)}
+const releaseGroups={'album,single,compilation':'TODOS LOS DISCOS',album:'ÁLBUMES',single:'SINGLES Y EP',appears_on:'APARICIONES'};
+function artistData(state){
+ if(!state.artist)state.artist={item:state.item,profileLoaded:false,songs:{items:[],offset:0,next:false,loaded:false},releases:{}};
+ return state.artist;
+}
+function artistPage(state){
+ const data=artistData(state);
+ if(state.tab!=='releases')return data.songs;
+ const group=releaseGroups[state.group]?state.group:'album,single,compilation';
+ if(!data.releases[group])data.releases[group]={items:[],offset:0,next:false,loaded:false};
+ return data.releases[group];
+}
+function artistView(state,tab,group=state.group){push({...state,tab,group,loading:false,error:''})}
 function renderArtist(state){
- detailHeading(state.item,'ARTISTA');
- if(state.tracks?.length){heading('CANCIONES');rows(state.tracks)}
- if(state.albums?.length){heading('ÁLBUMES Y SINGLES');const grid=make('div','tm-catalog-grid');state.albums.forEach(album=>grid.append(card(album,'album')));content.append(grid)}
- if(state.loading)message('Buscando música…');else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadArtist(state)});
- else if(state.loaded&&!state.tracks?.length&&!state.albums?.length)message('No se encontró música disponible para este artista.');
- moreButton(state,()=>loadArtist(state,true));
+ const data=artistData(state),page=artistPage(state),releases=state.tab==='releases',item=data.item;
+ const copy=detailHeading(item,'ARTISTA'),actions=make('div','tm-catalog-detail-actions');
+ const play=make('button','tm-catalog-button tm-artist-play','▶ ESCUCHAR');play.type='button';play.disabled=state.loading||!rt.account;
+ play.onclick=()=>void ui.run(play,async()=>{if(!data.songs.loaded)await loadArtist(state,false,'tracks');if(view()===state&&data.songs.items.length)return rt.playSequence(data.songs.items)});actions.append(play);
+ const external=make('a','tm-catalog-link','SPOTIFY ↗');external.href='https://open.spotify.com/artist/'+item.id;external.target='_blank';external.rel='noopener noreferrer';actions.append(external);copy.append(actions);
+ const nav=make('nav','tm-artist-tabs');nav.setAttribute('aria-label','Música del artista');
+ for(const [tab,label] of [['tracks','CANCIONES'],['releases','DISCOS']]){
+   const link=make('a','',label);link.href=window.TransmissionPages?.artistURL?.(state,tab,state.group)||'#';link.dataset.catalogFocus=tab;
+   if((releases?'releases':'tracks')===tab)link.setAttribute('aria-current','page');
+   link.onclick=event=>{if(!window.TransmissionPages){event.preventDefault();artistView(state,tab)}};nav.append(link);
+ }
+ content.append(nav);
+ const tools=make('div','tm-artist-tools');
+ if(releases){
+   const select=make('select','');select.setAttribute('aria-label','Tipo de disco');select.dataset.catalogFocus='release-group';
+   for(const [key,name] of Object.entries(releaseGroups)){const option=make('option','',name);option.value=key;option.selected=key===(state.group||'album,single,compilation');select.append(option)}
+   select.onchange=()=>artistView(state,'releases',select.value);tools.append(select);
+ }
+ if(page.loaded)tools.append(make('span','tm-catalog-count',page.items.length+(releases&&page.total?' / '+page.total:'')));
+ content.append(tools);
+ if(page.items.length){
+   if(releases){const grid=make('div','tm-catalog-grid tm-discography-grid');page.items.forEach(album=>grid.append(card(album,'album',{discography:true})));content.append(grid)}
+   else rows(page.items,undefined,{artist:true});
+ }
+ if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
+ else if(state.loading&&!page.items.length)message('CARGANDO…');
+ else if(state.error)message(state.error,{label:'REINTENTAR',run:()=>void loadArtist(state,!!page.items.length)});
+ else if(page.loaded&&!page.items.length)message(releases?'Sin discos disponibles.':'Sin canciones disponibles.');
+ if(!state.error)moreButton({...page,loading:state.loading},()=>loadArtist(state,true),releases?'MÁS DISCOS':'MÁS CANCIONES');
+ detailLayout(copy,'tm-artist-layout');
 }
-async function loadArtist(state,append=false){
- if(state.loading)return;const seq=++serial;state.loading=true;state.requestId=seq;state.error='';renderCurrent();
+function detailLayout(copy,kind){
+ const layout=make('div','tm-detail-layout '+kind),profile=make('header','tm-detail-profile'),library=make('div','tm-detail-library');
+ profile.append(copy.parentElement);library.append(...Array.from(content.childNodes));layout.append(profile,library);content.append(layout);
+}
+async function loadArtist(state,append=false,tab=state.tab){
+ if(state.loading)return;
+ const seq=++serial,data=artistData(state),page=artistPage({...state,tab}),releases=tab==='releases';
+ state.loading=true;state.requestId=seq;state.error='';renderCurrent();
+ const current=()=>seq===serial&&view()===state&&opened;
  try{
-   const offset=append?state.offset:0,query='artist:"'+state.item.name.replace(/"/g,'')+'"';
-   if(!valid(state.item)){
-     const matches=await request('/search?'+new URLSearchParams({q:state.item.name,type:'artist',limit:'10'}));
-     if(seq!==serial||view()!==state||!opened)return;
-     const exact=(matches?.artists?.items||[]).find(item=>item.name?.toLocaleLowerCase()===state.item.name.toLocaleLowerCase());
-     if(exact)state.item=exact;
+   if(!data.profileLoaded){
+     if(valid(data.item)){
+       try{const profile=await request('/artists/'+data.item.id);if(!current())return;data.item={...data.item,...profile}}
+       catch(error){if(!data.item.name||data.item.name==='ARTISTA'||error.status===429)throw error;rt.status('Artista: '+error.message,true)}
+     }else{
+       const matches=await request('/search?'+new URLSearchParams({q:data.item.name,type:'artist',limit:'10'}));if(!current())return;
+       const exact=(matches?.artists?.items||[]).find(item=>item.name?.toLocaleLowerCase()===data.item.name.toLocaleLowerCase());
+       if(!exact)throw Error('Artista no disponible.');data.item=exact;
+     }
+     if(!current())return;data.profileLoaded=true;state.item=data.item;document.title=data.item.name+' — TRANSMISSION';
    }
-   const results=await Promise.allSettled([
-     request('/search?'+new URLSearchParams({q:query,type:'track',limit:'10',offset:String(offset)})),
-     !append&&valid(state.item)?request('/artists/'+state.item.id+'/albums?include_groups=album,single&limit=20'):Promise.resolve(null)
-   ]);
-   if(seq!==serial||view()!==state||!opened)return;
-   const tracks=results[0],albums=results[1];
-   if(tracks.status==='rejected')throw tracks.reason;
-   const page=tracks.value?.tracks,raw=page?.items||[];
-   const batch=raw.filter(track=>valid(track)&&track.artists?.some(artist=>valid(state.item)?artist.id===state.item.id:artist.name.toLocaleLowerCase()===state.item.name.toLocaleLowerCase()));
-   const known=new Set((append?state.tracks||[]:[]).map(track=>track.id));state.tracks=append?[...state.tracks]:[];
-   for(const track of batch)if(!known.has(track.id)){known.add(track.id);state.tracks.push(track)}
-   if(albums.status==='fulfilled'&&albums.value)state.albums=(albums.value.items||[]).filter(valid);
-   state.offset=offset+raw.length;state.next=!!page?.next&&raw.length>0&&state.offset<1000;state.loaded=true;
- }catch(error){if(seq===serial){state.error=error.message;rt.status('Artista: '+error.message,true)}}
- finally{if(state.requestId===seq)state.loading=false;if(seq===serial&&view()===state&&opened)renderCurrent()}
+   if(!append){page.items=[];page.offset=0}
+   const known=new Set(page.items.map(item=>item.id)),start=page.items.length,target=releases?20:30;
+   // Spotify permits ten results per request. Keep requesting pages, not a fixed top-eight selection.
+   for(let batch=0;batch<(releases?2:5);batch++){
+     const endpoint=releases?'/artists/'+data.item.id+'/albums?'+new URLSearchParams({include_groups:state.group||'album,single,compilation',limit:'10',offset:String(page.offset)}):'/search?'+new URLSearchParams({q:'artist:"'+data.item.name.replace(/"/g,'')+'"',type:'track',limit:'10',offset:String(page.offset)});
+     const response=await request(endpoint);if(!current())return;
+     const result=releases?response:response?.tracks,raw=result?.items||[];
+     for(const item of raw){
+       const belongs=releases||item.artists?.some(artist=>artist.id===data.item.id);
+       if(valid(item)&&belongs&&!known.has(item.id)){known.add(item.id);page.items.push(item)}
+     }
+     page.offset+=raw.length;page.total=Number(result?.total)||page.items.length;
+     page.next=!!result?.next&&raw.length>0&&(releases||page.offset<1000);
+     if(!page.next||page.items.length-start>=target)break;
+   }
+   page.loaded=true;announce(page.items.length+' '+(releases?'discos':'canciones'));
+ }catch(error){if(current()){state.error=error.status===429?'Spotify está limitando las consultas. Inténtalo más tarde.':error.message;rt.status('Artista: '+error.message,true)}}
+ finally{if(state.requestId===seq)state.loading=false;if(current())renderCurrent()}
 }
-function renderCurrent(){content.replaceChildren();navigation();const state=view();content.setAttribute('aria-busy',String(!!state?.loading));if(!state)return;if(state.kind==='search')renderSearch(state);else if(state.kind==='album')renderAlbum(state);else renderArtist(state)}
+function announce(text){const status=$('tm-catalog-announcement');if(status)status.textContent=text}
+function renderCurrent(){
+ const focused=content.contains(document.activeElement)?document.activeElement?.dataset.catalogFocus:null;
+ content.replaceChildren();navigation();const state=view();content.setAttribute('aria-busy',String(!!state?.loading));if(!state)return;
+ if(state.kind==='search')renderSearch(state);else if(state.kind==='album')renderAlbum(state);else renderArtist(state);
+ if(focused)content.querySelector('[data-catalog-focus="'+focused+'"]')?.focus({preventScroll:true});
+}
 async function render(){
- renderCurrent();const state=view();if(!state||state.loaded)return;
- if(state.kind==='search'&&state.query)await loadSearch();else if(state.kind==='album')await loadAlbum(state);else if(state.kind==='artist')await loadArtist(state);
+ renderCurrent();const state=view();if(!state||!rt.account)return;
+ if(state.kind==='artist'){if(!artistPage(state).loaded)await loadArtist(state);return}
+ if(state.loaded)return;
+ if(state.kind==='search'&&state.query)await loadSearch();else if(state.kind==='album')await loadAlbum(state);
 }
 function openAlbum(item){if(!valid(item))return;push({kind:'album',item,tracks:[],loaded:false,loading:false,next:false,query:''})}
 function openArtist(item){if(typeof item==='string')item=(rt.accountArtists||[]).find(artist=>artist.name.toLocaleLowerCase()===item.toLocaleLowerCase())||{name:item};if(!item?.name)return;push({kind:'artist',item,tracks:[],albums:[],offset:0,loaded:false,loading:false,next:false,query:''})}
 function openPlaylist(item){window.TransmissionLibrary?.openDetail?.(item)}
-function traverse(delta){const next=cursor+delta;if(next<0||next>=history.length)return;view().scroll=shell.scrollTop;++serial;cursor=next;view().loading=false;clearTimeout(timer);ui.close();void render();shell.scrollTop=view().scroll||0}
+function traverse(delta){const next=cursor+delta;if(next<0||next>=history.length)return;view().scroll=shell.scrollTop;++serial;cursor=next;view().loading=false;field.value=view().query||'';clearTimeout(timer);ui.close();void render();shell.scrollTop=view().scroll||0}
 $('tm-catalog-close').onclick=()=>close();$('tm-catalog-back').onclick=()=>window.TransmissionPages?window.TransmissionPages.back():traverse(-1);$('tm-catalog-forward').onclick=()=>window.TransmissionPages?window.TransmissionPages.forward():traverse(1);
 $('tm-catalog-form').onsubmit=event=>{event.preventDefault();clearTimeout(timer);search(field.value,view()?.filter||'track')};
 field.addEventListener('input',()=>clearTimeout(timer));

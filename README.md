@@ -23,7 +23,7 @@ Cada visitante autorizado carga su propia rotación, playlists, favoritas, histo
 
 ## Datos personales de la cuenta
 
-El bloque **Mis listas** contiene únicamente playlists. La cabecera no repite una portada como fondo; las carátulas conservan su proporción, los títulos aparecen debajo y los accesos de reproducción tienen su propio espacio. Se muestran hasta cuatro listas y el botón **Archivo** abre el resto. Una única playlist utiliza una fila con carátula y texto separados.
+El bloque **Mis listas** contiene únicamente playlists. La cabecera no repite una portada como fondo; las carátulas conservan su proporción, los títulos aparecen debajo y los accesos de reproducción tienen su propio espacio. Se muestran hasta cuatro listas y la flecha de la cabecera abre el resto. Una única playlist utiliza una fila con carátula y texto separados.
 
 **Discos guardados** (`#/discos`) lee los álbumes de la biblioteca, con artistas, año de publicación y fecha de guardado. Se pueden filtrar los discos cargados, cargar otros veinte y abrir su ficha para escucharlos o añadirlos a la cola.
 
@@ -48,15 +48,19 @@ Buscar, explorar, abrir artistas y álbumes, listas y favoritas son páginas con
 - `#/escuchando`: carátula, transporte y posición, álbum y artistas, guardar, compartir y siguientes. También se abre tocando la carátula del reproductor inferior.
 - `#/atajos`: guía de uso y teclado.
 
-Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Se pueden borrar desde Explorar. La búsqueda completa se envía al pulsar Enter o Buscar; la cabecera conserva sus resultados rápidos. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
+Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Se pueden borrar desde Explorar. La lupa y `/` abren la página de búsqueda. La consulta se envía al pulsar Enter o Buscar; no hay otro buscador desplegable ni peticiones por cada letra. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
 
-El temporizador está en **Más opciones → Temporizador**, en una fila compacta. Permite pausar en 15, 30, 45 o 60 minutos; se cancela eligiendo Desactivado. Sigue activo al navegar y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
+El temporizador está en **Más opciones**, identificado por un reloj. Permite pausar en 15, 30, 45 o 60 minutos; se cancela eligiendo Desactivado. El tiempo restante aparece dentro de ese menú. Sigue activo al navegar y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
 
 La ampliación conserva OAuth, su configuración, los permisos solicitados, la renovación de sesión y la integración del Web Playback SDK. No añade servicios musicales externos ni credenciales.
 
 ## Navegar y preparar la cola
 
-La lupa conserva el campo de búsqueda de la cabecera. Muestra canciones rápidas con sus acciones; Enter o **Ver todos los resultados** abre el explorador. **Explorar** también permite comenzar desde artistas personales y géneros. Hay filtros de canciones, artistas, álbumes y playlists, carga de más resultados y botones para volver a la vista anterior o siguiente. Reproducir mantiene abierta la navegación; el reproductor sigue accesible en el explorador, las favoritas y las listas.
+La lupa abre el buscador como página. **Explorar** también permite comenzar desde artistas personales y géneros. Hay filtros de canciones, artistas, álbumes y playlists, carga de más resultados y botones para volver a la vista anterior o siguiente. Si una búsqueda de canciones coincide exactamente con un artista, aparece un acceso a su ficha. Reproducir mantiene abierta la navegación; el reproductor sigue accesible en el explorador, las favoritas y las listas.
+
+La ficha del artista tiene pestañas **Canciones** y **Discos**, con direcciones propias (`vista=discos`, y `grupo=album|single|appears_on`). La selección inicial busca unas treinta canciones, consultando páginas de diez hasta un máximo de cinco peticiones por tanda. **Más canciones** continúa desde el siguiente resultado. Spotify limita la búsqueda a mil resultados: no se presenta ese buscador como una exportación de toda la obra. La discografía se pagina de forma independiente, de diez en diez, agrupando dos páginas por tanda. Se pueden abrir álbumes, singles, EP y apariciones y recorrer sus canciones. No se utiliza el endpoint retirado de canciones principales del artista.
+
+Artistas y álbumes utilizan una ficha lateral en escritorio y una cabecera compacta en móvil. Las filas de canciones muestran enlaces directos a artistas o al álbum correspondiente, duración, añadir a la cola y opciones. **Me gusta** utiliza estas mismas filas con búsqueda y ordenación; las portadas ya no se repiten como una cuadrícula de tarjetas en esa página. Las migas, rótulos de tipo y párrafos de instrucciones se retiraron de las pantallas de escucha.
 
 Cada canción tiene **+** para añadir a la cola y un menú **…** para reproducir después, guardar o quitar de Me gusta, abrir álbum/artista y compartir el enlace. Guardar una canción desde los resultados actualiza las favoritas aunque sea distinta de la que suena. Escuchar o añadir un álbum carga primero todas sus páginas disponibles. La búsqueda reproduce la selección de resultados que se ha cargado.
 
@@ -80,6 +84,8 @@ La cuenta del propietario puede abrir **Más opciones → Selección pública** 
 
 Una respuesta 429 conserva la autorización y respeta el plazo disponible. `spotify-status.json` contiene únicamente información pública del límite observado y caduca; no contiene datos de cuenta. Cuando CORS oculta el encabezado de espera y no existe un plazo confirmado, la interfaz distingue una pausa de solicitudes de un restablecimiento conocido de la cuota.
 
-La verificación local incluye bibliotecas de 107 canciones, reproducción desde el índice elegido, secuencias largas, cambios rápidos de playlist, búsquedas tardías, cola, estados de repetición, renovación de sesión y separación de datos entre cuentas. Se comprobaron escritorio y móvil entre 320 y 1440 píxeles. Las pruebas sintéticas complementan la comprobación real con Spotify y no sustituyen una cuenta Premium.
+Las comprobaciones anteriores del repositorio incluyen bibliotecas de 107 canciones, secuencias largas, cambios rápidos de playlist, búsquedas tardías, cola, repetición y renovación de sesión. Esos resultados pertenecen a sus revisiones anteriores.
 
-Actualización del 19 de octubre de 2026: se ejecutaron comprobaciones específicas de cola preparada, continuación de 107 pistas, edición con posición y pausa, rechazo de API, adiciones concurrentes, cambios durante una edición, cola externa, dispositivo elegido y favoritos de canciones sin reproducir. El navegador se revisó con una cuenta simulada, incluida búsqueda paginada, respuesta lenta descartada, álbumes, navegación y móvil de 375 píxeles. No se verificó audio real con una cuenta Premium durante esta actualización. Las pruebas y la cuenta simulada se conservan fuera del código publicado.
+En la revisión de navegación y composición posterior a `4500ec0` se revisó el código y la presentación con composiciones estáticas de muestra, sin sesión ni reproducción, además de las páginas públicas. No se ejecutaron pruebas automatizadas ni se verificó audio real con una cuenta Premium en esta revisión. Las composiciones de muestra y la referencia NTS permanecen fuera del código publicado.
+
+Referencias de paginación consultadas: [búsqueda](https://developer.spotify.com/documentation/web-api/reference/search), [artista](https://developer.spotify.com/documentation/web-api/reference/get-an-artist) y [discografía](https://developer.spotify.com/documentation/web-api/reference/get-an-artists-albums). Las peticiones de discografía respetan su máximo actual de diez resultados.

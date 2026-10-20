@@ -13,13 +13,13 @@ function title(kicker,name,description){
  if(description)head.append(make('p','',description));content.append(head);
 }
 function empty(text){
- const block=make('div','tm-page-empty');block.append(make('p','',text),rt.account?link('EXPLORAR MÚSICA ↗','#/explorar','tm-catalog-button'):button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(block);
+ const block=make('div','tm-page-empty');if(rt.account)block.append(make('p','',text));else block.append(button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(block);
 }
 function currentTrack(){const track=rt.currentTrack;return state?.trackId&&track?.id===state.trackId?track:null}
 function renderNow(){
  const track=currentTrack();
  renderedTrack=track?.id||null;
- if(!track){title('','ESCUCHANDO');tick();return}
+ if(!track){title('','ESCUCHAR');const tracks=(rt.recent?.length?rt.recent:rt.accountTracks||[]).slice(0,30);for(const [index,item] of tracks.entries())content.append(ui.row(item,{tracks,index,number:index+1}));tick();return}
  const grid=make('div','tm-listening-layout'),main=make('article','tm-listening-record'),cover=make('div','tm-listening-cover');
  const art=ui.art(track);if(art)cover.style.backgroundImage='url("'+art+'")';else cover.append(make('span','','T/M'));
  cover.setAttribute('role','img');cover.setAttribute('aria-label','Carátula de '+(track.album?.name||track.name));main.append(cover);
@@ -34,8 +34,12 @@ function renderNow(){
  const transport=make('div','tm-listening-transport');
  transport.append(button('←',()=>$('tm-prev').click(),'tm-listening-previous'),button('▶ ESCUCHAR',()=>$('tm-play').click(),'tm-listening-play'),button('→',()=>$('tm-next').click(),'tm-listening-next'));
  transport.firstChild.setAttribute('aria-label','Canción anterior');transport.lastChild.setAttribute('aria-label','Canción siguiente');transport.children[1].id='tm-listening-play';copy.append(transport);
- const actions=make('div','tm-listening-actions'),favorite=button('♡ GUARDAR',event=>void ui.run(event.currentTarget,()=>window.TransmissionFavorites.toggleTrack(track)),'tm-text-action');
- favorite.id='tm-listening-save';actions.append(favorite,button('+ A LA COLA',event=>void ui.run(event.currentTarget,()=>rt.enqueueTracks([track])),'tm-text-action'),button('COLA ↗',()=>window.TransmissionQueue.open(),'tm-text-action'),button('COMPARTIR ↗',()=>$('tm-mini-share').click(),'tm-text-action'),ui.optionsButton(track));copy.append(actions);
+ const actions=make('div','tm-listening-actions'),favorite=button('♡',event=>void ui.run(event.currentTarget,()=>window.TransmissionFavorites.toggleTrack(track)),'tm-text-action');
+ favorite.id='tm-listening-save';actions.append(favorite);
+ for(const [id,label,run] of [['tm-mini-queue','Ver cola',()=>window.TransmissionQueue.open()],['tm-mini-share','Compartir canción',()=>$('tm-mini-share').click()]]){
+   const action=button('',run,'tm-text-action');action.setAttribute('aria-label',label);action.title=label;const icon=$(id).querySelector('svg')?.cloneNode(true);if(icon)action.append(icon);actions.append(action);
+ }
+ actions.append(ui.optionsButton(track));copy.append(actions);
  main.append(copy);grid.append(main);
  const aside=make('aside','tm-listening-aside');const next=make('section','tm-listening-next-section');next.id='tm-listening-next-section';aside.append(next);grid.append(aside);content.append(grid);
  renderUpcoming();updateFavorite();tick();
@@ -46,13 +50,13 @@ function renderUpcoming(){
  section.parentElement.hidden=!tracks.length;section.closest('.tm-listening-layout').classList.toggle('tm-without-queue',!tracks.length);if(!tracks.length)return;
  const head=make('div','tm-catalog-section-head');head.append(make('h2','','DESPUÉS'),button('VER COLA ↗',()=>window.TransmissionQueue.open(),'tm-text-action'));section.append(head);
  const meta=make('p','tm-listening-note',tracks.length+' '+(tracks.length===1?'CANCIÓN':'CANCIONES')+(duration&&tracks.every(track=>Number(track.duration_ms)>0)?' · '+ui.format(duration):''));section.append(meta);
- tracks.slice(0,4).forEach((track,index)=>section.append(ui.row(track,{tracks,index,number:index+1})));
+ tracks.slice(0,4).forEach((track,index)=>section.append(ui.row(track,{tracks,index,number:index+1,hideAdd:true})));
 }
 function renderHistory(){
  if(rt.account?.id!==recentAccount){recentAccount=rt.account?.id;sessionRecent=[]}
- title('','ÚLTIMAS ESCUCHAS');
+ title('','HISTORIAL');
  const official=(rt.recentEvents||[]).filter(entry=>entry.track?.id),records=official.length?official:(rt.recent||[]).map(track=>({track}));
- if(!records.length&&!sessionRecent.length){empty(rt.account?'Todavía no hay escuchas recientes disponibles.':'Conecta Spotify para abrir tu archivo personal.');return}
+ if(!records.length&&!sessionRecent.length){empty('Sin escuchas recientes.');return}
  const groups=new Map(),today=new Date().toDateString(),dateFormat=new Intl.DateTimeFormat('es',{weekday:'long',day:'numeric',month:'long'}),timeFormat=new Intl.DateTimeFormat('es',{hour:'2-digit',minute:'2-digit',hour12:false});
  if(sessionRecent.length)groups.set('EN ESTA SESIÓN',sessionRecent.map(track=>({track})));
  for(const entry of records){
@@ -70,29 +74,22 @@ function renderHistory(){
  }
 }
 function renderGuide(){
- title('','GUÍA Y ATAJOS');
- const cards=make('div','tm-guide-grid');
- for(const [name,copy,href] of [
-   ['EXPLORAR','Busca canciones, abre un artista o recorre sus álbumes sin perder lo que suena.','#/explorar'],
-   ['PREPARAR LA COLA','Añade con +. Abre … para colocar una canción después de la actual. La cola permite editar las selecciones de TRANSMISSION.','#/escuchando'],
-   ['VOLVER A ESCUCHAR','Tus favoritas, playlists e historial tienen su propia página. Usa las flechas del navegador para volver.','#/historial'],
-   ['TEMPORIZADOR','Más opciones → Temporizador. Pausa en 15, 30, 45 o 60 minutos con esta pestaña abierta.','#/escuchando']
- ]){const card=make('article','tm-guide-card');card.append(make('h2','',name),make('p','',copy),link('ABRIR ↗',href,'tm-text-action'));cards.append(card)}content.append(cards);
+ title('','ATAJOS');
  const table=make('table','tm-shortcut-table'),body=make('tbody','');
  for(const [key,action] of [['/','Buscar música'],['ESPACIO','Reproducir / pausar'],['← / →','Retroceder / avanzar 5 segundos'],['MAYÚS + ← / →','Canción anterior / siguiente'],['Q','Abrir la cola'],['N','Ver lo que suena'],['?','Abrir esta guía'],['ESC','Cerrar menús y cola']]){
    const row=make('tr',''),keyCell=make('th','');keyCell.scope='row';keyCell.append(make('kbd','',key));row.append(keyCell,make('td','',action));body.append(row);
- }table.append(make('caption','','ATAJOS DE TECLADO'),body);content.append(table,make('p','tm-listening-note','Los atajos se usan fuera de los campos de texto y los controles.'));
+ }table.append(body);content.append(table);
 }
 function render(){
  content.replaceChildren();seeking=false;
  if(page==='escuchando')renderNow();
  else if(page==='historial')renderHistory();
  else if(page==='atajos')renderGuide();
- else{title('TRANSMISSION','NO ENCONTRAMOS ESTA PÁGINA');empty('Vuelve al archivo para seguir explorando.')}
+ else{title('','PÁGINA NO ENCONTRADA');content.append(link('← INICIO','#top','tm-text-action'))}
 }
 function show(kind){page=kind;shell.hidden=false;if(rt.state!==state){state=rt.state;seenAt=Date.now()}lastTrack=state?.trackId;render()}
 function close(){page=null;shell.hidden=true}
-function updateFavorite(){const node=$('tm-listening-save'),track=currentTrack();if(!node||!track)return;const saved=window.TransmissionFavorites?.isSaved(track);node.textContent=saved?'♥ GUARDADA':'♡ GUARDAR';node.setAttribute('aria-pressed',String(!!saved))}
+function updateFavorite(){const node=$('tm-listening-save'),track=currentTrack();if(!node||!track)return;const saved=window.TransmissionFavorites?.isSaved(track);node.textContent=saved?'♥':'♡';node.title=saved?'Quitar de Me gusta':'Guardar en Me gusta';node.setAttribute('aria-label',node.title);node.setAttribute('aria-pressed',String(!!saved))}
 function arm(minutes){
  if(!rt.account){rt.notify('Conecta Spotify para usar el temporizador.');return}
  timer={end:Date.now()+minutes*60000,account:rt.account.id,minutes};tick();rt.notify('Temporizador: '+minutes+' min.');
@@ -113,7 +110,7 @@ async function finishTimer(){
 function tick(){
  if(timer&&rt.account?.id!==timer.account)timer=null;
  if(timer&&Date.now()>=timer.end){void finishTimer();return}
- const remaining=timer?Math.max(0,timer.end-Date.now()):0,badge=$('tm-timer-status');badge.hidden=!timer;badge.textContent=timer?'PAUSA EN '+ui.format(remaining):'';
+ const remaining=timer?Math.max(0,timer.end-Date.now()):0;
  const timerStatus=$('tm-sleep-status');timerStatus.hidden=!timer&&!firing;timerStatus.textContent=firing?'…':ui.format(remaining);
  $('tm-sleep-select').disabled=!rt.account||firing;$('tm-sleep-select').value=timer?String(timer.minutes):'0';
  const more=$('tm-more');more.classList.toggle('tm-timer-active',!!timer);more.title=timer?'Temporizador: '+ui.format(remaining):'Más opciones';

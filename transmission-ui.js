@@ -16,6 +16,8 @@ function collage(id,items){
  host.replaceChildren(...pictures.map(url=>{const tile=document.createElement('span');tile.style.backgroundImage='url("'+url+'")';return tile}));
 }
 function refresh(){
+ const headerHeight=Math.ceil(document.querySelector('.site-header').getBoundingClientRect().height)+'px';
+ if(document.documentElement.style.getPropertyValue('--tm-header-height')!==headerHeight)document.documentElement.style.setProperty('--tm-header-height',headerHeight);
  window.TransmissionPages?.accountChanged?.();
  document.body.classList.toggle('tm-connected',!!rt.account);
  const next=rt.upcomingTrack;

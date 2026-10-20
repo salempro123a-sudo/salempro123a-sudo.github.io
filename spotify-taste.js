@@ -75,7 +75,8 @@ function renderLikedAll(){
  const value=el('tm-liked-search').value.trim().toLocaleLowerCase();
  const all=sortedLiked();
  const tracks=value?all.filter(t=>(t.name+' '+artists(t)+' '+(t.album?.name||'')).toLocaleLowerCase().includes(value)):all;
- for(const t of tracks){
+ for(const [index,t] of tracks.entries()){
+   if(window.TransmissionTrackActions){host.append(window.TransmissionTrackActions.row(t,{tracks,index,number:index+1,onPlay:()=>playLikedFrom(t)}));continue}
    const card=create('article','tm-liked-all-card');
    const listen=create('button','tm-liked-all-listen');listen.type='button';listen.setAttribute('aria-label','Reproducir '+t.name);
    const art=create('span','tm-liked-all-art'),pic=image(t);if(pic)art.style.backgroundImage='url("'+pic+'")';
@@ -86,7 +87,7 @@ function renderLikedAll(){
    host.append(card);
  }
  if(!tracks.length){
-   host.append(create('p','tm-liked-empty',value?'Sin coincidencias.':accountConnected?'Todavía no hay canciones guardadas.':'Conecta Spotify para abrir tus canciones guardadas.'));
+   if(accountConnected)host.append(create('p','tm-liked-empty',value?'Sin coincidencias.':'Sin canciones guardadas.'));
    if(!accountConnected){const connect=create('button','tm-catalog-button','CONECTAR SPOTIFY');connect.type='button';connect.onclick=()=>el('saved-trigger').click();host.append(connect)}
  }
  el('tm-liked-total').textContent=tracks.length+' / '+(likesTotal||liked.length);

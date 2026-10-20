@@ -42,16 +42,24 @@ function optionsButton(track,cls='tm-track-options'){
 }
 function row(track,options={}){
  const item=make('div','tm-song-row');item.dataset.trackId=track.id;
- const play=make('button','tm-song-play');play.type='button';play.setAttribute('aria-label','Reproducir '+track.name);
- const cover=make('span','tm-song-cover');const image=art(track);if(image)cover.style.backgroundImage='url("'+image+'")';
+ const main=make('div','tm-song-play'),play=make('button','tm-song-name');play.type='button';play.setAttribute('aria-label','Reproducir '+track.name);
+ const cover=make('button','tm-song-cover');cover.type='button';cover.tabIndex=-1;cover.setAttribute('aria-hidden','true');const image=art(track);if(image)cover.style.backgroundImage='url("'+image+'")';
  const symbol=make('span','tm-song-symbol','▶');cover.append(symbol);
- const copy=make('span','tm-song-copy');copy.append(make('strong','',track.name),make('small','',options.subtitle||by(track)));
- if(options.number!==undefined)play.append(make('span','tm-song-number',String(options.number).padStart(2,'0')));
- play.append(cover,copy);play.onclick=()=>void run(play,()=>options.onPlay?options.onPlay():rt.playSequence(options.tracks||[track],options.index||0));
+ const copy=make('div','tm-song-copy'),subtitle=make('small','');play.append(make('strong','',track.name));
+ if(options.subtitle)subtitle.textContent=options.subtitle;
+ else if(options.albumSubtitle&&track.album?.id){const link=make('a','',track.album.name);link.href='#/album/'+track.album.id+'?'+new URLSearchParams({nombre:track.album.name});subtitle.append(link)}
+ else for(const [index,artist] of (track.artists||[]).entries()){
+   if(index)subtitle.append(document.createTextNode(', '));
+   if(/^[A-Za-z0-9]{22}$/.test(artist.id||'')){const link=make('a','',artist.name);link.href='#/artista/'+artist.id+'?'+new URLSearchParams({nombre:artist.name});subtitle.append(link)}else subtitle.append(document.createTextNode(artist.name||''));
+ }
+ copy.append(play,subtitle);
+ if(options.number!==undefined)main.append(make('span','tm-song-number',String(options.number).padStart(2,'0')));
+ if(!options.noCover)main.append(cover);else item.classList.add('tm-song-without-cover');
+ main.append(copy);play.onclick=()=>void run(play,()=>options.onPlay?options.onPlay():rt.playSequence(options.tracks||[track],options.index||0));cover.onclick=()=>play.click();
  const duration=make('span','tm-song-duration',track.duration_ms?format(track.duration_ms):'');
  const add=make('button','tm-song-add','+');add.type='button';add.title='Añadir a la cola: '+track.name;add.setAttribute('aria-label',add.title);add.disabled=track.is_playable===false;add.onclick=()=>void run(add,()=>rt.enqueueTracks([track]));
- const more=optionsButton(track);item.append(play,duration,add,more);
- if(track.is_playable===false){play.disabled=true;item.classList.add('is-unavailable');play.title='No disponible en tu cuenta'}
+ const more=optionsButton(track);item.append(main,duration);if(!options.hideAdd)item.append(add);item.append(more);
+ if(track.is_playable===false){play.disabled=true;cover.disabled=true;item.classList.add('is-unavailable');play.title='No disponible en tu cuenta'}
  item.classList.toggle('is-current',rt.state?.trackId===track.id);return item;
 }
 document.addEventListener('pointerdown',event=>{if(!menu.hidden&&!menu.contains(event.target)&&!anchor?.contains(event.target))close()});

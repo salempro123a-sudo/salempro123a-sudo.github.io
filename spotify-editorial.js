@@ -251,7 +251,7 @@ function renderTiles(tracks){
     button.append(art,play,mark);button.onclick=()=>void playSequence(tracks,i);
     const info=create('div','record-info');
     const text=create('div');
-    text.append(create('span','record-type',t.album?.release_date?.slice(0,4)||'CANCIÓN'),create('h3','',title(t)),create('p','',artist(t)));
+    text.append(create('span','record-type',t.album?.release_date?.slice(0,4)||''),create('h3','',title(t)),create('p','',artist(t)));
     const add=create('button','save-button','…');add.type='button';
     add.setAttribute('aria-label','Opciones de '+title(t));
     add.onclick=event=>window.TransmissionTrackActions?.open?.(t,event.currentTarget);
@@ -262,7 +262,7 @@ function renderRail(items){
   const grid=$('tm-rail-grid');grid.replaceChildren();
   const visible=items.filter(pl=>pl?.id).slice(0,4);grid.dataset.count=String(visible.length);
   if(!visible.length){
-    const message=create('p','tm-rail-empty',account?'No hay playlists disponibles en tu archivo.':'Conecta Spotify para abrir tus playlists.');
+    const message=create('p','tm-rail-empty',account?'SIN LISTAS':'CONECTA SPOTIFY');
     grid.append(message);return;
   }
    visible.forEach((pl,i)=>{

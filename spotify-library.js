@@ -23,12 +23,12 @@ function render(){
    const card=create('button','tm-library-card');card.type='button';
    const art=create('span','tm-library-art');const image=safeImg(p.images?.[0]?.url);
    if(image)art.style.backgroundImage='url("'+image+'")';else art.textContent='♫';
-   card.append(art,create('strong','',p.name||'Playlist'),create('small','',Number.isFinite(p.items?.total)?p.items.total+' CANCIONES':'LISTA'));
+   card.append(art,create('strong','',p.name||'Playlist'),create('small','',Number.isFinite(p.items?.total)?p.items.total+' CANCIONES':p.owner?.display_name||''));
    card.onclick=()=>void openDetail(p);
    grid.append(card);
  }
  if(!found.length){
-   grid.append(create('p','tm-liked-empty',items.length?'No hay coincidencias.':rt.account?'No hay listas disponibles.':'Conecta Spotify para abrir tus listas.'));
+   if(rt.account||items.length)grid.append(create('p','tm-liked-empty',items.length?'Sin coincidencias.':'Sin listas.'));
    if(!rt.account&&!items.length){const connect=create('button','tm-catalog-button','CONECTAR SPOTIFY');connect.type='button';connect.onclick=()=>$('saved-trigger').click();grid.append(connect)}
  }
  $('tm-library-count').textContent=items.length+(total>items.length?' / '+total:'')+' LISTAS';
@@ -68,7 +68,7 @@ async function loadMore(){
    total=Math.max(items.length,Number(data.total)||0);
    next=!!data.next&&page.length>0&&offset<total;
    feedback.textContent='';
- }catch(e){feedback.textContent='No se pudieron cargar más listas. Consulta Diagnóstico.';rt.status('Listas: '+e.message,true)}
+ }catch(e){feedback.textContent='No se pudieron cargar más listas.';rt.status('Listas: '+e.message,true)}
  finally{loading=false;render()}
 }
 function clearEmbed(){$('tm-playlist-frame').replaceChildren();$('tm-playlist-frame').hidden=true}

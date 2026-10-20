@@ -20,8 +20,8 @@ function card(item,type,added){
  link.href='#/'+(type==='artist'?'artista':'album')+'/'+item.id+'?'+new URLSearchParams({nombre:item.name||''});
  const cover=make('span','tm-archive-art'),image=ui.art(item);if(image)cover.style.backgroundImage='url("'+image+'")';
  cover.append(make('span','tm-archive-arrow','↗'));
- link.append(cover,make('strong','',item.name||'Sin título'),make('small','',type==='artist'?'ARTISTA':[ui.by(item),item.release_date?.slice(0,4)].filter(Boolean).join(' · ')));
- if(added&&!Number.isNaN(Date.parse(added)))link.append(make('small','tm-archive-added','GUARDADO '+new Intl.DateTimeFormat('es',{day:'numeric',month:'short',year:'numeric'}).format(new Date(added)).toUpperCase()));
+ link.append(cover,make('strong','',item.name||'Sin título'));if(type!=='artist')link.append(make('small','',[ui.by(item),item.release_date?.slice(0,4)].filter(Boolean).join(' · ')));
+ if(added&&!Number.isNaN(Date.parse(added))){const date=make('small','tm-archive-added',new Intl.DateTimeFormat('es',{day:'numeric',month:'short',year:'numeric'}).format(new Date(added)).toUpperCase());date.title='Fecha de guardado';link.append(date)}
  return link;
 }
 function results(state){
@@ -35,22 +35,20 @@ function results(state){
  }else{
    const tracks=state.items;tracks.forEach((track,index)=>host.append(ui.row(track,{tracks,index,number:index+1})));
  }
- if(!items.length&&!state.loading&&!state.error)host.append(make('p','tm-archive-empty',query?'No hay coincidencias entre los discos cargados.':state.kind==='discos'?'Todavía no hay discos guardados en tu biblioteca.':'Spotify todavía no tiene una selección disponible para este periodo.'));
- $('tm-archive-count').textContent=state.kind==='discos'?state.items.length+' DE '+state.total+' DISCOS CARGADOS':state.items.length+' '+(active.type==='artists'?'ARTISTAS':'CANCIONES');
+ if(!items.length&&!state.loading&&!state.error)host.append(make('p','tm-archive-empty',query?'Sin coincidencias.':state.kind==='discos'?'Sin discos guardados.':'Sin resultados para este periodo.'));
+ $('tm-archive-count').textContent=state.kind==='discos'?state.items.length+' / '+state.total:state.items.length+' '+(active.type==='artists'?'ARTISTAS':'CANCIONES');
 }
 function draw(){
  if(!active)return;const state=current(),albums=active.kind==='discos';content.replaceChildren();
- const head=make('header','tm-personal-heading');head.append(make('h1','',albums?'DISCOS GUARDADOS':'CANCIONES Y ARTISTAS'));content.append(head);
- const links=make('nav','tm-archive-nav');links.setAttribute('aria-label','Archivo personal');
- for(const [label,href] of [['PLAYLISTS','#/playlists'],['DISCOS','#/discos'],['ME GUSTA','#/guardadas'],['ROTACIÓN','#/rotacion']]){const link=make('a','',label);link.href=href;if((albums&&href==='#/discos')||(!albums&&href==='#/rotacion'))link.setAttribute('aria-current','page');links.append(link)}content.append(links);
- if(!rt.account){const empty=make('div','tm-page-empty');empty.append(make('p','','Conecta Spotify para abrir esta parte de tu archivo.'),button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(empty);return}
+ const head=make('header','tm-personal-heading');head.append(make('h1','',albums?'DISCOS':'EN ROTACIÓN'));content.append(head);
+ if(!rt.account){const empty=make('div','tm-page-empty');empty.append(button('CONECTAR SPOTIFY',()=>$('saved-trigger').click()));content.append(empty);return}
  const bar=make('div','tm-archive-toolbar');
  if(albums){
    const search=make('input','');search.type='search';search.placeholder='Filtrar estos discos';search.setAttribute('aria-label','Filtrar los discos cargados');search.value=state.query;search.oninput=()=>{state.query=search.value;results(state)};bar.append(search);
  }else{
    const tabs=make('nav','tm-archive-tabs');tabs.setAttribute('aria-label','Tipo de afinidad');
    for(const [type,label] of [['tracks','CANCIONES'],['artists','ARTISTAS']]){const link=make('a','',label);link.href=route(type,active.period);if(active.type===type)link.setAttribute('aria-current','page');tabs.append(link)}bar.append(tabs);
-   const label=make('label','tm-archive-period','PERIODO'),select=make('select','');select.setAttribute('aria-label','Periodo de afinidad');
+   const label=make('label','tm-archive-period'),select=make('select','');select.setAttribute('aria-label','Periodo de afinidad');
    for(const [key,name] of Object.entries(periods)){const option=make('option','',name);option.value=key;option.selected=key===active.period;select.append(option)}
    select.onchange=()=>window.TransmissionPages.navigate(route(active.type,select.value));label.append(select);bar.append(label);
  }
@@ -58,7 +56,7 @@ function draw(){
  if(!albums&&active.type==='tracks'&&state.items.length)summary.append(button('▶ ESCUCHAR SELECCIÓN',event=>void ui.run(event.currentTarget,()=>rt.playSequence(state.items))));
  content.append(summary);
  const host=make('div','tm-archive-results');host.id='tm-archive-results';host.setAttribute('aria-busy',String(state.loading));content.append(host);results(state);
- if(state.loading)content.append(make('p','tm-archive-feedback','Cargando tu archivo…'));
+ if(state.loading)content.append(make('p','tm-archive-feedback','CARGANDO…'));
  if(state.error){const error=make('div','tm-archive-feedback');error.setAttribute('role','status');error.append(make('p','',state.error),button('REINTENTAR',()=>void load(state,false)));content.append(error)}
  if(albums&&state.next&&!state.error)content.append(button(state.loading?'CARGANDO…':'MÁS DISCOS ↓',()=>void load(state,true),'tm-catalog-more'));
 }

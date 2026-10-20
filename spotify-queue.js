@@ -53,7 +53,7 @@ async function updateQueue(force=false){
  if(current){label('AHORA');const row=make('div','tm-mini-queue-item is-current'),name=make('span','tm-mini-queue-name');name.append(make('strong','',current.name),make('small','',(current.artists||[]).map(artist=>artist.name).join(', ')));row.append(make('span','tm-mini-queue-index','▶'),name);container.append(row)}
  label(managed?(current?'SIGUIENTES':'LISTA PARA REPRODUCIR'):'A CONTINUACIÓN EN SPOTIFY');
  tracks.forEach((track,index)=>queueRow(track,index,tracks,managed));
- if(!tracks.length)container.append(make('p','tm-empty',rt.account?'Añade canciones con + mientras exploras.':'Conecta Spotify para preparar tu cola.'));
+ if(!tracks.length)container.append(make('p','tm-empty','COLA VACÍA'));
  if(tracks.length&&!current&&managed){const start=make('button','tm-catalog-button tm-queue-start','▶ ESCUCHAR COLA');start.type='button';start.onclick=()=>void edit(start,()=>rt.playSequence(tracks));container.prepend(start)}
 }
 function open(){panel.hidden=false;trigger.setAttribute('aria-expanded','true');void updateQueue();$('tm-mini-queue-close').focus()}

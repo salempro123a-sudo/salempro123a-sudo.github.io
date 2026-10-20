@@ -3,7 +3,7 @@
 .rail-head{position:static;display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex:none;gap:18px;padding:0 0 16px;border:0;border-bottom:1px solid #777;background:#000;isolation:auto}
 .rail-head::before{display:none}
 .rail-heading{font-size:28px;line-height:30px;font-weight:700;margin:0}
-.tm-rail-open{position:static;display:block;width:auto;height:auto;flex:none;padding:6px 0;border:0;background:none;font-size:13px;line-height:18px;font-weight:600}
+.tm-rail-open{position:static;display:block;width:34px;height:34px;flex:none;padding:0;border:0;background:none;font-size:28px;line-height:34px;font-weight:400}
 .tm-rail-open:hover{text-decoration:underline;text-underline-offset:4px}
 .tm-rail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:20px 14px;flex:1;min-height:0;overflow:auto;padding:17px 0;scrollbar-width:thin}
 .rail-item{display:block;position:relative;min-width:0;min-height:0;height:auto;padding:0;border:0;background:none;text-align:left;overflow:visible;align-self:start}
@@ -30,7 +30,7 @@
 .tm-personal-page{min-height:calc(100svh - 180px)}
 .tm-personal-content{max-width:1280px;margin:auto;padding:34px 28px 65px}
 .tm-personal-heading{margin-bottom:28px}
-.tm-personal-heading h1{font-size:clamp(33px,4.3vw,54px);line-height:1.05;margin:8px 0 13px}
+.tm-personal-heading h1{font-size:32px;line-height:36px;margin:0 0 22px}
 .tm-personal-heading p{font-size:18px;line-height:25px;color:#aaa;margin:0}
 .tm-archive-nav{display:flex;align-items:center;gap:28px;border-top:1px solid #666;border-bottom:1px solid #666;overflow:auto;scrollbar-width:thin}
 .tm-archive-nav a{flex:none;padding:15px 0;font-size:15px;line-height:21px;color:#aaa;border-bottom:2px solid transparent}

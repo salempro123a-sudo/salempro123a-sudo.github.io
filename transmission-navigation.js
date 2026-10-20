@@ -13,15 +13,17 @@ function parse(hash){
  const kind=parts[0];
  if(kind==='explorar')return {kind:'search',query:'',filter:'track',title:'EXPLORAR'};
  if(kind==='buscar')return {kind:'search',query:(params.get('q')||'').slice(0,200),filter:filters.includes(params.get('tipo'))?params.get('tipo'):'track',title:'BÚSQUEDA'};
- if(['artista','album','playlist'].includes(kind)&&valid(parts[1]))return {kind:kind==='artista'?'artist':kind,id:parts[1],name:(params.get('nombre')||'').slice(0,200),title:kind==='artista'?'ARTISTA':kind==='album'?'ÁLBUM':'PLAYLIST'};
+ if(['artista','album','playlist'].includes(kind)&&valid(parts[1]))return {kind:kind==='artista'?'artist':kind,id:parts[1],name:(params.get('nombre')||'').slice(0,200),tab:params.get('vista')==='discos'?'releases':'tracks',group:['album','single','appears_on'].includes(params.get('grupo'))?params.get('grupo'):'album,single,compilation',title:kind==='artista'?'ARTISTA':kind==='album'?'ÁLBUM':'PLAYLIST'};
  if(kind==='rotacion')return {kind,title:'EN ROTACIÓN',period:['short_term','medium_term','long_term'].includes(params.get('periodo'))?params.get('periodo'):'short_term',type:params.get('vista')==='artists'?'artists':'tracks'};
- const names={playlists:'MIS LISTAS',guardadas:'ME GUSTA',escuchando:'ESCUCHANDO',historial:'ÚLTIMAS ESCUCHAS',discos:'DISCOS GUARDADOS',atajos:'GUÍA Y ATAJOS'};
+ const names={playlists:'MIS LISTAS',guardadas:'ME GUSTA',escuchando:'ESCUCHANDO',historial:'HISTORIAL',discos:'DISCOS',atajos:'ATAJOS'};
  if(names[kind])return {kind,title:names[kind]};
  return {kind:'missing',title:'PÁGINA NO ENCONTRADA'};
 }
 function catalogURL(state){
  if(state.kind==='search')return state.query?'#/buscar?'+new URLSearchParams({q:state.query,tipo:state.filter||'track'}):'#/explorar';
- return '#/'+(state.kind==='artist'?'artista':'album')+'/'+state.item.id+'?'+new URLSearchParams({nombre:state.item.name||''});
+ const params=new URLSearchParams({nombre:state.item.name||''});
+ if(state.kind==='artist'&&state.tab==='releases'){params.set('vista','discos');if(['album','single','appears_on'].includes(state.group))params.set('grupo',state.group)}
+ return '#/'+(state.kind==='artist'?'artista':'album')+'/'+state.item.id+'?'+params;
 }
 function rememberState(hash,state){snapshots.set(hash,state);if(snapshots.size>30)snapshots.delete(snapshots.keys().next().value)}
 function updateNavigation(){
@@ -43,7 +45,7 @@ async function render(hash,restoring=false){
  closeViews();
  document.body.classList.toggle('tm-page-open',!!current);
  $('main').hidden=!!current;document.querySelector('.footer').hidden=!!current;
- $('tm-page-masthead').hidden=!current;
+ $('tm-page-masthead').hidden=!current||['search','artist','album'].includes(current.kind);
  $('tm-page-label').textContent=current?.title||'';
  $('main-nav').classList.remove('is-open');$('menu-toggle').setAttribute('aria-expanded','false');
  if(current){
@@ -51,9 +53,11 @@ async function render(hash,restoring=false){
    if(['search','artist','album'].includes(current.kind)){
      let state=snapshots.get(hash);
      if(!state){
-       state=current.kind==='search'?{kind:'search',query:current.query,filter:current.filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false}:{kind:current.kind,item:{id:current.id,name:current.name||current.title},tracks:[],albums:[],offset:0,loaded:false,loading:false,next:false,query:''};
+       const previous=current.kind==='artist'?[...snapshots.values()].find(saved=>saved.kind==='artist'&&saved.item.id===current.id):null;
+       state=current.kind==='search'?{kind:'search',query:current.query,filter:current.filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false}:{kind:current.kind,item:previous?.artist?.item||{id:current.id,name:current.name||current.title},artist:previous?.artist,tracks:[],albums:[],offset:0,loaded:false,loading:false,next:false,query:''};
        rememberState(hash,state);
      }
+     if(current.kind==='artist'){state.tab=current.tab;state.group=current.group}
      catalog?.showState(state);
    }else if(current.kind==='playlists')library?.open({routed:true});
    else if(current.kind==='playlist'){
@@ -70,7 +74,10 @@ async function render(hash,restoring=false){
    const target=!current&&hash&&hash!=='#'?document.getElementById(hash.slice(1)):null;
    if(target)target.scrollIntoView({behavior:'instant'});
    else window.scrollTo({top:restoring?scrolls.get(hash)||0:0,behavior:'instant'});
-   if(!restoring&&current)$('tm-page-label').focus({preventScroll:true});
+   if(!restoring&&current){
+     if(current.kind==='search')$('tm-catalog-query').focus({preventScroll:true});
+     else{const title=document.querySelector('[role="main"]:not([hidden]) h1:not([hidden])');if(title){title.tabIndex=-1;title.focus({preventScroll:true})}}
+   }
  });
 }
 function navigate(hash,options={}){
@@ -113,13 +120,16 @@ window.TransmissionPages={
      if(found)state.item=found;else return navigate('#/buscar?'+new URLSearchParams({q:state.item.name,tipo:'artist'}));
    }
    if(state.kind!=='search'&&!valid(state.item?.id))return;
+   if(state.kind==='artist'&&!state.artist){const known=[...snapshots.values()].find(saved=>saved.kind==='artist'&&saved.item.id===state.item.id);if(known?.artist)state.artist=known.artist}
    navigate(catalogURL(state),{state});
  },
+ artistURL:(state,tab,group)=>catalogURL({...state,tab,group}),
  library:()=>navigate('#/playlists'),playlist:item=>{if(valid(item?.id))navigate('#/playlist/'+item.id+'?'+new URLSearchParams({nombre:item.name||'Playlist'}),{state:{item}})},
  liked:()=>navigate('#/guardadas'),accountChanged,
  get isCatalog(){return ['search','artist','album'].includes(current?.kind)},get isLibrary(){return ['playlists','playlist'].includes(current?.kind)},get isLiked(){return current?.kind==='guardadas'},
  get canBack(){return position>0},get canForward(){return position<lastIndex},get current(){return current}
 };
+$('tm-page-back').onclick=()=>window.TransmissionPages.back();
 window.history.scrollRestoration='manual';
 window.history.replaceState({...window.history.state,tmPageIndex:0},'',location.href);
 void render(location.hash);
