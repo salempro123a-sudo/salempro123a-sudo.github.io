@@ -105,8 +105,15 @@ function browse(){
  content.append(tags);
  const artists=rt.accountArtists||[];
  if(artists.length){const head=heading('TUS ARTISTAS');const all=make('a','tm-text-action','↗');all.href='#/rotacion?vista=artists';all.setAttribute('aria-label','Ver tus artistas');head.append(all);const grid=make('div','tm-catalog-grid');artists.forEach(artist=>grid.append(card(artist,'artist')));content.append(grid)}
- const tracks=(rt.recent?.length?rt.recent:rt.accountTracks).slice(0,10);
- if(tracks.length){heading(rt.recent?.length?'VOLVER A ESCUCHAR':'EN ROTACIÓN');rows(tracks)}
+ const state=view();
+ if(rt.ready&&!state.suggestions?.length){
+   state.suggestions=window.TransmissionSelection.choose(window.TransmissionSelection.pool(),{
+     limit:10,avoid:[...(rt.homeTracks||[]),...(window.TransmissionTaste?.getHomeLiked?.()||[])]
+   });
+   window.TransmissionSelection.remember(state.suggestions);
+ }
+ const tracks=state.suggestions||[];
+ if(tracks.length){heading('PARA EXPLORAR');rows(tracks)}
  else if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
 }
 function renderSearch(state){
@@ -314,6 +321,10 @@ document.querySelectorAll('#tm-catalog-tabs button').forEach(button=>button.oncl
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&opened&&!window.TransmissionPages?.isCatalog){event.preventDefault();close()}});
 document.querySelectorAll('a[href="#explore"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();search()}));
 window.addEventListener('resize',()=>{if(opened)topOffset()});
+window.addEventListener('tm:rotation',()=>{
+ const state=view();if(state?.kind!=='search'||state.query)return;
+ state.suggestions=null;if(opened)renderCurrent();
+});
 function recentKey(){return 'tm:searches:'+(rt.account?.id||'guest')}
 function recentSearches(){try{const value=JSON.parse(localStorage.getItem(recentKey())||'[]');return Array.isArray(value)?value.filter(query=>typeof query==='string'&&query.length<=200).slice(0,8):[]}catch{return []}}
 function remember(query){if(!query)return;try{localStorage.setItem(recentKey(),JSON.stringify([query,...recentSearches().filter(item=>item.toLocaleLowerCase()!==query.toLocaleLowerCase())].slice(0,8)))}catch{}}

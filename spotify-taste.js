@@ -4,6 +4,7 @@
 (async function(){
 'use strict';
 const sp=window.TransmissionSpotify;
+const selection=window.TransmissionSelection;
 const el=id=>document.getElementById(id);
 if(!sp||!el('tm-liked-grid'))return;
 const art=u=>typeof u==='string'&&/^https:\/\/(i\.scdn\.co|mosaic\.scdn\.co|image-cdn-ak\.spotifycdn\.com|seeded-session-images\.scdn\.co)\//.test(u)?u:'';
@@ -22,20 +23,26 @@ const unique=items=>{
  return out;
 };
 let liked=[],likesTotal=0,canFetchMore=false,page=0,loading=false,likedOffset=0,likedOrder='new',modalOpen=false,modalFocus=null,likedRequest=null;
+let homeLikedOrder='mix',homeMix=[],mixSignature='',rotationBusy=false,discoveryRequest=null;
 const pageSize=()=>window.matchMedia?.('(max-width:540px)').matches?2:window.matchMedia?.('(max-width:767px)').matches?3:6;
 let recentEvents=[],accountTop=[],rt=null,accountConnected=false,accountReady=false;
 const likedGrid=el('tm-liked-grid'),more=el('tm-liked-more'),play=el('tm-liked-play'),label=el('liked-kicker');
 function status(message,error=false){rt?.status(message,error)}
-function sortedLiked(){
+function sortedLiked(order=likedOrder){
  const items=unique(liked);
- if(likedOrder==='old')return items.reverse();
- if(likedOrder==='az')return items.sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
- if(likedOrder==='artist')return items.sort((a,b)=>artists(a).localeCompare(artists(b),'es',{sensitivity:'base'})||a.name.localeCompare(b.name,'es'));
+ if(order==='old')return items.reverse();
+ if(order==='az')return items.sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+ if(order==='artist')return items.sort((a,b)=>artists(a).localeCompare(artists(b),'es',{sensitivity:'base'})||a.name.localeCompare(b.name,'es'));
  return items;
+}
+function renewHomeMix(){
+ homeMix=selection.choose([...(rt?.homeSaved||[]),...liked],{limit:120,avoid:[...(rt?.homeTracks||[]),...(rt?.recent||[]).slice(0,4)],fresh:false});
+ page=0;mixSignature='';
 }
 function render(){
  likedGrid.replaceChildren();
- const active=sortedLiked(),size=pageSize(),count=likesTotal||active.length;
+ if(homeLikedOrder==='mix'&&!homeMix.length&&liked.length)renewHomeMix();
+ const active=homeLikedOrder==='mix'?homeMix:sortedLiked(homeLikedOrder),size=pageSize(),count=likesTotal||active.length;
  const maxPage=Math.max(0,Math.ceil(active.length/size)-1);
  page=Math.min(page,maxPage);
  const start=page*size,end=Math.min(start+size,active.length);
@@ -49,7 +56,10 @@ function render(){
      const cover=create('button','tm-liked-art');cover.type='button';
      cover.setAttribute('aria-label','Reproducir '+t.name);cover.title=t.name;
      if(image(t))cover.style.backgroundImage='url("'+image(t)+'")';
-     cover.onclick=()=>void playLikedFrom(t);
+     cover.onclick=()=>{
+       if(homeLikedOrder!=='mix')return void playLikedFrom(t);
+       rt?.player?.activateElement?.();void rt?.playSequence(active,active.findIndex(track=>track.id===t.id));
+     };
      const meta=create('div','tm-liked-caption');
      meta.append(create('strong','',t.name),create('small','',artists(t)));
      if(window.TransmissionTrackActions)meta.append(window.TransmissionTrackActions.optionsButton(t,'tm-card-options'));
@@ -57,15 +67,19 @@ function render(){
    }
  }
  play.disabled=!active.length;
- el('tm-liked-position').textContent=active.length?String(start+1).padStart(2,'0')+'–'+String(end).padStart(2,'0')+' / '+count:'';
+ el('tm-liked-position').textContent=active.length?String(start+1).padStart(2,'0')+'–'+String(end).padStart(2,'0')+' / '+(homeLikedOrder==='mix'?active.length:count):'';
  const pager=el('tm-liked-pager');
  if(pager)pager.hidden=count<=size;
  el('tm-liked-prev').disabled=page===0||loading;
- more.disabled=loading||((page+1)*size>=active.length&&!(accountConnected&&canFetchMore));
+ more.disabled=loading||(homeLikedOrder==='mix'?active.length<=size:(page+1)*size>=active.length&&!(accountConnected&&canFetchMore));
  more.hidden=false;
  el('tm-liked-all').disabled=!active.length;
  el('collection-count-3').textContent=active.length?count+' '+(count===1?'CANCIÓN':'CANCIONES'):'';
  label.hidden=true;
+ if(homeLikedOrder==='mix'){
+   const visible=active.slice(start,end),signature=visible.map(t=>t.id).join(',');
+   if(signature&&signature!==mixSignature){mixSignature=signature;selection.remember(visible)}
+ }
  if(modalOpen)renderLikedAll();
  window.TransmissionUI?.refresh?.();
 }
@@ -127,7 +141,7 @@ async function playLikedFrom(track){
  rt.player?.activateElement?.();
  const tracks=await loadLikedSelection();
  const index=tracks.findIndex(t=>t.id===track.id);
- return index>=0?rt.playSequence(tracks,index):false;
+ return index>=0?rt.playSequence(tracks,index):rt.playSequence([track,...tracks]);
 }
 async function openLikedAll(options={}){
  if(!options.routed&&window.TransmissionPages)return window.TransmissionPages.liked();
@@ -164,7 +178,7 @@ function fillPlaylistRail(){
 async function loadFirst(){
  if(accountConnected){
    try{
-     const data=await sp.api('/me/tracks?limit=50&offset=0');
+     const data=rt.savedFirstPage||await sp.api('/me/tracks?limit=50&offset=0');
      liked=(data.items||[]).map(x=>x.track).filter(valid);
      likedOffset=(data.items||[]).length;
      likesTotal=Number(data.total)||liked.length;
@@ -174,12 +188,20 @@ async function loadFirst(){
    liked=(rt?.publicSnapshot?.liked||[]).filter(valid);
    likesTotal=liked.length;
  }
- render();
+ renewHomeMix();render();
  rt?.fillEmptyHome?.(liked);
  fillPlaylistRail();
 }
 async function loadNext(){
  if(loading)return;
+ if(homeLikedOrder==='mix'){
+   if((page+1)*pageSize()<homeMix.length)page++;
+   else{
+     loading=true;more.disabled=true;
+     try{await rt?.refreshHomeSources?.();renewHomeMix()}finally{loading=false}
+   }
+   render();return;
+ }
  const desired=(page+2)*pageSize();
  if(desired>liked.length&&accountConnected&&canFetchMore)await fetchLikedBatch();
  if((page+1)*pageSize()<liked.length)page++;
@@ -195,7 +217,7 @@ function recentWeight(entries){
  }
  if(accountConnected){
    recentEvents.slice(0,50).forEach((x,i)=>add(x.track,Math.max(6,115-i*2.3)));
-   accountTop.slice(0,30).forEach((t,i)=>add(t,Math.max(9,80-i*2.3)));
+   accountTop.forEach((t,i)=>add(t,Math.max(9,80-i*.6)));
    liked.slice(0,100).forEach((t,i)=>add(t,Math.max(5,24-i*.25)));
  }else{
    (rt?.publicSnapshot?.recent||[]).slice(0,20).forEach((t,i)=>add(t,Math.max(8,105-i*4.5)));
@@ -235,12 +257,17 @@ function rememberDiscoveries(tracks){
    localStorage.setItem(accountStorageKey('tm_discovery_seen'),JSON.stringify(seen.slice(-160)));
  }catch{}
 }
-async function lightDiscovery(known,force=false){
+async function lightDiscovery(known){
  if(!rt?.account)return [];
- if(!force&&discoveryCache.length&&Date.now()-discoveryTime<300000)return [...discoveryCache];
+ if(discoveryRequest)return discoveryRequest;
+ if(discoveryTime&&Date.now()-discoveryTime<300000)return [...discoveryCache];
+ discoveryRequest=findDiscoveries(known);
+ try{return await discoveryRequest}finally{discoveryRequest=null}
+}
+async function findDiscoveries(known){
  const previous=previousDiscoveries();
- const owned=unique([...known,...liked,...(rt.accountTracks||[]),...(rt.recent||[])]);
- const knownIds=new Set(owned.map(t=>t.id));
+ const owned=selection.unique([...known,...liked,...selection.pool(),...(rt.recent||[])]);
+ const knownIds=new Set(owned.map(selection.key));
  // Use actual artists appearing in recent listening, top tracks and saved songs.
  const artists=[];
  const seenArtist=new Set();
@@ -259,12 +286,12 @@ async function lightDiscovery(known,force=false){
  try{localStorage.setItem(accountStorageKey('tm_discovery_turn'),String(discoveryTurn))}catch{}
  const fresh=[],later=[];
  const consider=track=>{
-   if(!valid(track)||knownIds.has(track.id))return;
+   if(!valid(track)||track.is_playable===false||knownIds.has(selection.key(track)))return;
    const list=previous.has(track.id)?later:fresh;
    if(!fresh.some(x=>x.id===track.id)&&!later.some(x=>x.id===track.id))list.push(track);
  };
  // Move across different artists and result pages at each explicit request.
- const picked=[artists[(discoveryTurn*2)%artists.length],artists[(discoveryTurn*2+1)%artists.length]];
+ const picked=[artists[(discoveryTurn*2)%artists.length],artists[(discoveryTurn*2+1)%artists.length]].filter((a,index,items)=>index===0||(a.id||a.name)!==(items[0].id||items[0].name));
  for(let i=0;i<picked.length;i++){
    const a=picked[i];if(!a?.name)continue;
    try{
@@ -318,7 +345,7 @@ async function lightDiscovery(known,force=false){
      }
    }catch(e){console.warn('Album discovery:',e?.message)}
  }
- discoveryCache=[...fresh,...later].slice(0,18);
+ discoveryCache=selection.unique([...fresh,...later]).slice(0,24);
  discoveryTime=Date.now();
  return [...discoveryCache]
 }
@@ -334,9 +361,9 @@ function recordStart(id){
    localStorage.setItem(accountStorageKey('tm_recent_starts'),JSON.stringify(history.slice(-35)));
  }catch{}
 }
-function arrangeSession(familiar,discoveries){
- const known=unique(familiar);
- const explored=unique(discoveries).filter(t=>!known.some(k=>k.id===t.id));
+function arrangeSession(familiar,discoveries,options={}){
+ const known=selection.unique([...familiar,...selection.pool()]);
+ const explored=selection.unique(discoveries).filter(t=>!known.some(k=>selection.key(k)===selection.key(t)));
  const starts=readStarts();
  const never=explored.filter(t=>!starts.includes(t.id));
  const fallback=explored.filter(t=>starts.includes(t.id));
@@ -348,21 +375,13 @@ function arrangeSession(familiar,discoveries){
  const recentlyStarted=starts.slice(-Math.min(8,Math.max(1,alternatives.length-1)));
  let starters=alternatives.filter(t=>!recentlyStarted.includes(t.id));
  if(!starters.length)starters=alternatives;
- let turn=0;
- try{turn=Math.max(0,Number(localStorage.getItem(accountStorageKey('tm_now_turn'))||0))}catch{}
- turn++;
- try{localStorage.setItem(accountStorageKey('tm_now_turn'),String(turn))}catch{}
- let starter=starters[(turn-1)%starters.length]||null;
- if(starter?.id===starts.at(-1)&&starters.length>1){
-   starter=starters.find(t=>t.id!==starter.id)||starter;
- }
+ const freshStarts=never.filter(t=>!recentlyStarted.includes(t.id));
+ if(options.discover&&freshStarts.length)starters=freshStarts;
+ const starter=selection.choose(starters,{limit:1})[0]||null;
  if(!starter)return [];
  const order=[starter],seen=new Set([starter.id]);
- const remainingKnown=[...known].sort((a,b)=>{
-   const ap=starts.lastIndexOf(a.id),bp=starts.lastIndexOf(b.id);
-   return ap-bp
- });
- const others=[...unknown.filter(t=>!seen.has(t.id)),...remainingKnown];
+ const remainingKnown=selection.choose(known,{limit:60,avoid:known.filter(t=>lastIds.has(t.id)),context:[starter]});
+ const others=selection.unique([...unknown.filter(t=>!seen.has(t.id)),...remainingKnown]);
  let avoidArtist=(t)=>artists(t).toLocaleLowerCase();
  while(others.length&&order.length<40){
    const last=order[order.length-1];
@@ -382,11 +401,11 @@ async function playNow(){
  const previous=caption.textContent;
  caption.textContent='Buscando otras canciones…';
  try{
-   const discoveries=await lightDiscovery(known,true);
+   const discoveries=await lightDiscovery(known);
    const queue=arrangeSession(known,discoveries);
    if(!queue.length)return;
    const started=await startSongs(queue);
-   if(started)recordStart(queue[0]?.id);
+   if(started){recordStart(queue[0]?.id);selection.remember(queue.slice(0,1))}
    rememberDiscoveries(discoveries);
  }catch(e){status('No pude preparar la sesión: '+e.message,true)}
  finally{button.disabled=false;caption.textContent=previous}
@@ -394,7 +413,7 @@ async function playNow(){
 async function playLiked(){
  if(play.disabled)return;
  play.disabled=true;rt?.player?.activateElement?.();
- try{await startSongs(await loadLikedSelection())}finally{render()}
+ try{await startSongs(homeLikedOrder==='mix'?homeMix:await loadLikedSelection())}finally{render()}
 }
 async function fetchRecent(){
  if(!accountConnected)return;
@@ -409,11 +428,9 @@ async function fetchRecent(){
  }catch(e){console.warn('Recent affinity not available:',e.message)}
 }
 async function prepare(){
- for(let i=0;i<38;i++){
-   rt=window.TransmissionRuntime;
-   if(rt?.ready)break;
-   await new Promise(done=>setTimeout(done,300));
- }
+ rt=window.TransmissionRuntime;
+ if(!rt?.ready)await new Promise(done=>window.addEventListener('tm:ready',done,{once:true}));
+ rt=window.TransmissionRuntime;
  if(!rt)return;
  accountConnected=!!rt.account;
  accountReady=!!rt.account;
@@ -431,37 +448,34 @@ async function prepare(){
  if(station&&!hasSelection && !(rt?.accountTracks?.length||rt?.playlists?.length))station.hidden=true;
 }
 async function surprisePlay(){
+ if(rotationBusy)return;
+ rotationBusy=true;
+ const button=el('random-discovery');button.disabled=true;
+ try{
  const favorites=recentWeight(recentEvents);
- const discoveries=await lightDiscovery(favorites,true);
+ const discoveries=await lightDiscovery(favorites);
  const never=unique(discoveries).filter(t=>!favorites.some(f=>f.id===t.id));
- let queue;
- if(never.length){
-   // Distinct from Para ahora: unfamiliar music receives priority.
-   queue=unique([...never,...favorites]).slice(0,40);
- }else{
-   queue=arrangeSession(favorites,[]);
- }
+ const queue=arrangeSession(favorites,never,{discover:true});
  if(!queue.length){status('Todavía no hay canciones para descubrir.',true);return}
  const ok=await startSongs(queue);
- if(ok){recordStart(queue[0].id);rememberDiscoveries(discoveries)}
+ if(ok){recordStart(queue[0].id);rememberDiscoveries(discoveries);selection.remember(queue.slice(0,1))}
+ }catch(e){status('No pude preparar otra selección: '+e.message,true)}
+ finally{rotationBusy=false;button.disabled=false}
 }
 async function refreshRotation(){
  const button=el('top-refresh');
- if(!rt?.setRotation||!button)return;
+ if(!rt?.ready||!rt.setRotation||!button||button.disabled||rotationBusy)return;
+ rotationBusy=true;
  const label=button.firstChild,original=label?.textContent;
  button.disabled=true;button.setAttribute('aria-busy','true');
  if(label)label.textContent='BUSCANDO… ';
  try{
-   const familiar=recentWeight(recentEvents);
-   const discovered=await lightDiscovery(familiar,true);
-   const merged=unique([...discovered,...familiar]);
-   if(!merged.length){status('Todavía no hay canciones para renovar la vista.',true);return}
-   const shift=discoveryTurn%Math.max(1,merged.length);
-   const rotated=[...merged.slice(shift),...merged.slice(0,shift)];
-   rt.setRotation(rotated);
+   const enrich=await rt.refreshHomeSources();
+   const discovered=enrich?await lightDiscovery(recentWeight(recentEvents)):[];
+   if(!rt.setRotation(discovered))status('Todavía no hay canciones para renovar la vista.',true);
    rememberDiscoveries(discovered.slice(0,8));
  }catch(e){status('No pude renovar la selección: '+e.message,true)}
- finally{button.disabled=false;button.removeAttribute('aria-busy');if(label)label.textContent=original}
+ finally{rotationBusy=false;button.disabled=false;button.removeAttribute('aria-busy');if(label)label.textContent=original}
 }
 el('tm-now-play').onclick=()=>{rt?.player?.activateElement?.();void playNow()};
 el('random-discovery').onclick=()=>{rt?.player?.activateElement?.();void surprisePlay()};
@@ -475,10 +489,9 @@ el('tm-liked-modal').addEventListener('click',e=>{if(e.target===el('tm-liked-mod
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen&&!window.TransmissionPages?.isLiked)closeLikedAll()});
 el('tm-liked-search').addEventListener('input',renderLikedAll);
 async function changeLikedOrder(value){
- likedOrder=value;page=0;
+ likedOrder=value;
  el('tm-liked-sort').value=value;
- el('tm-liked-sort-inline').value=value;
- render();
+ renderLikedAll();
  if(accountConnected&&canFetchMore&&value!=='new'){
    let pages=0;
    while(canFetchMore&&pages<12){
@@ -486,10 +499,19 @@ async function changeLikedOrder(value){
      pages++;
    }
  }
+ renderLikedAll();
+}
+async function changeHomeLikedOrder(value){
+ homeLikedOrder=value;page=0;
+ if(value==='mix')renewHomeMix();
  render();
+ if(value!=='mix'&&value!=='new'&&accountConnected&&canFetchMore){
+  for(let i=0;i<12&&canFetchMore;i++)if(!await fetchLikedBatch())break;
+  render();
+ }
 }
 el('tm-liked-sort').onchange=()=>void changeLikedOrder(el('tm-liked-sort').value);
-el('tm-liked-sort-inline').onchange=()=>void changeLikedOrder(el('tm-liked-sort-inline').value);
+el('tm-liked-sort-inline').onchange=()=>void changeHomeLikedOrder(el('tm-liked-sort-inline').value);
 el('tm-liked-load').onclick=()=>void fetchLikedBatch();
 
 document.addEventListener('tm:library-changed',event=>{
@@ -507,8 +529,9 @@ document.addEventListener('tm:library-changed',event=>{
    likesTotal=Math.max(0,likesTotal-1);
     if(liked.length!==before)likedOffset=Math.max(0,likedOffset-1);
  }
- render();
+ renewHomeMix();render();
 });
+window.addEventListener('tm:rotation',()=>{if(rt?.ready){renewHomeMix();render()}});
 
 window.addEventListener?.('tm:account-track',event=>{
   const track=event.detail?.track;
@@ -524,6 +547,7 @@ window.TransmissionTaste={
  getNowSongs:()=>recentWeight(recentEvents),
  refreshRotation,surprisePlay,
  getLiked:()=>unique(liked),
+ getHomeLiked:()=>homeLikedOrder==='mix'?homeMix.slice(page*pageSize(),(page+1)*pageSize()):sortedLiked(homeLikedOrder).slice(page*pageSize(),(page+1)*pageSize()),
   getTotal:()=>likesTotal||unique(liked).length
 };
 await prepare();

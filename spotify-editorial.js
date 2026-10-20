@@ -5,12 +5,15 @@
 const sp=window.TransmissionSpotify;
 if(!sp){console.error('Spotify authorization module missing');return}
 const $=id=>document.getElementById(id);
-const list={tracks:[],playlists:[],recent:[],liked:[],shared:null},owner=sp.CONFIG.ownerId;
+const selection=window.TransmissionSelection;
+const list={tracks:[],heroes:[],cards:[],playlists:[],recent:[],liked:[],shared:null},owner=sp.CONFIG.ownerId;
 let account=null,player=null,device=null,deviceSelected=false,hero=0,featured=null;
-let selected=null,lastPlayerState=null,poll=null,sdkPromise=null,lastOnAirId=null;
-let lastPlayback=null,publicSnapshot=null,accountTracks=[],accountSaved=[],accountArtists=[],manualUntil=0,station=null,ready=false;
+let selected=null,lastPlayerState=null,poll=null,sdkPromise=null;
+let lastPlayback=null,publicSnapshot=null,accountTracks=[],accountSaved=[],accountArtists=[],station=null,ready=false;
 let connectionError=null,outputDevice=null,stagedTracks=[],queueTail=Promise.resolve(),queueRevision=0;
 let recentEvents=[];
+let savedFirstPage=null,deepSaved=[],homeSourcesReady=false,homeSourcesRequest=null,selectionRefreshAt=0;
+function markReady(){ready=true;window.dispatchEvent(new CustomEvent('tm:ready'))}
 const safeArt=u=>typeof u==='string'&&/^https:\/\/(i\.scdn\.co|mosaic\.scdn\.co|image-cdn-ak\.spotifycdn\.com|seeded-session-images\.scdn\.co)\//.test(u)?u:'';
 const title=t=>t?.name||'';
 const artist=t=>(t?.artists||[]).map(x=>x.name).filter(Boolean).join(', ')||'';
@@ -158,15 +161,14 @@ function installOwnerExport(){
 }
 async function playStation(){
   if(!account){status('Conecta tu Spotify Premium para escuchar la estación.',true);return}
-  const tracks=arrangeForDisplay(uniqueTracks([
-    ...list.tracks,...accountTracks,...accountSaved,...list.recent
-  ])).slice(0,40);
+  const tracks=selection.choose(list.tracks.length?list.tracks:selection.pool(),{limit:60,avoid:selected?[selected]:[]});
   if(!tracks.length){status('Necesitamos primero una selección musical real para esta estación.',true);return}
-  await playSequence(tracks);
+  const started=await playSequence(tracks);
+  if(started)selection.remember(tracks.slice(0,1));
 }
 
 function renderHero(index){
-  const arr=list.tracks;
+  const arr=list.heroes;
   if(!arr.length)return;
   hero=((index%arr.length)+arr.length)%arr.length;
   featured=arr[hero];
@@ -182,22 +184,23 @@ function renderHero(index){
   $('pause-slide').textContent='▶';
   $('pause-slide').title='Reproducir esta canción';
 }
+function renderHome(){
+  selection.setRecent([...(selected?[selected]:[]),...(account?list.recent:(publicSnapshot?.recent||[]))]);
+  const next=selection.compose();
+  if(!next)return false;
+  list.tracks=next.sequence;list.heroes=next.heroes;list.cards=next.cards;
+  renderHero(0);renderTiles(list.cards);renderOtherDetails();
+  window.dispatchEvent(new CustomEvent('tm:rotation'));
+  return true;
+}
 function fillEmptyHome(items){
+  selection.setSource('saved',items);
   if(list.tracks.length)return;
-  const prepared=arrangeForDisplay(uniqueTracks(items)).slice(0,24);
-  if(!prepared.length)return;
-  list.tracks=prepared;
-  renderHero(0);
-  renderTiles(prepared);
-  renderOtherDetails();
+  renderHome();
 }
 function setRotation(tracks){
-  const chosen=uniqueTracks(tracks).slice(0,36);
-  if(!chosen.length)return false;
-  list.tracks=arrangeForDisplay(chosen).slice(0,24);
-  manualUntil=Date.now()+120000;
-  renderHero(0);renderTiles(list.tracks);renderOtherDetails();
-  return true;
+  if(tracks?.length)selection.setSource('discovery',tracks);
+  return renderHome();
 }
 function renderCoverArt(node,t){
   if(!node)return;
@@ -242,13 +245,14 @@ function renderTiles(tracks){
     });
     return;
   }
+  const sequence=selection.unique([...tracks,...list.tracks]);
   tracks.slice(0,8).forEach((t,i)=>{
     const card=create('article','record-card');
     const button=create('button','record-image');button.type='button';button.title='Reproducir '+title(t);
     const art=create('span','record-art');applyTrackArt(art,t);
     const play=create('span','card-play','▶');
     const mark=create('span','record-index','');
-    button.append(art,play,mark);button.onclick=()=>void playSequence(tracks,i);
+    button.append(art,play,mark);button.onclick=()=>void playSequence(sequence,i);
     const info=create('div','record-info');
     const text=create('div');
     text.append(create('span','record-type',t.album?.release_date?.slice(0,4)||''),create('h3','',title(t)),create('p','',artist(t)));
@@ -286,13 +290,14 @@ function renderRecent(tracks){
     button.onclick=()=>account?$('latest').scrollIntoView({behavior:'smooth'}):$('saved-trigger').click();
     section.append(button);return;
   }
-  uniqueTracks(tracks).slice(0,4).forEach((t,i)=>{
+  const sequence=uniqueTracks(tracks);
+  sequence.slice(0,4).forEach((t,i)=>{
     const btn=create('div','tm-recent-item');
     const cover=create('span','tm-recent-cover');applyTrackArt(cover,t);
     const meta=create('span','tm-recent-desc');meta.append(create('strong','',title(t)),create('small','',artist(t)));
     const play=create('button','tm-recent-play');play.type='button';play.setAttribute('aria-label','Escuchar '+title(t));
     play.append(cover,meta,create('span','tm-recent-arrow','▶'));
-    play.onclick=()=>void playSequence(tracks,i);
+    play.onclick=()=>void playSequence(sequence,i);
     const options=create('button','tm-card-options','…');options.type='button';options.setAttribute('aria-label','Opciones de '+title(t));
     options.onclick=e=>window.TransmissionTrackActions?.open?.(t,e.currentTarget);
     btn.append(play,options);section.append(btn);
@@ -312,7 +317,7 @@ function setLiveLabel(value){
 function renderOtherDetails(){
   const connected=!!account;
   const published=!!publicSnapshot?.tracks?.length;
-  $('pick-period').textContent=connected?'ÚLTIMAS SEMANAS':published?'MIS FAVORITAS':'MI SELECCIÓN';
+  $('pick-period').textContent='';
   $('collection-count-1').textContent=list.tracks.length?list.tracks.length+' CANCIONES':'';
   $('collection-count-2').textContent=list.playlists.length?list.playlists.length+' LISTAS':'';
   const likedCount=window.TransmissionTaste?.getTotal?.()??publicSnapshot?.liked?.length??0;
@@ -708,22 +713,13 @@ function notePlay(t){
   if(!account||!t?.id||lastRecentId===t.id)return;
   lastRecentId=t.id;
   list.recent=[t,...list.recent.filter(x=>x?.id!==t.id)].slice(0,30);
+  selection.setRecent(list.recent);
   renderRecent(list.recent);
   window.dispatchEvent(new CustomEvent('tm:account-track',{detail:{track:t}}));
 }
 function renderHighlighted(t){
- if(!t?.id||Date.now()<manualUntil)return;
- if(lastOnAirId===t.id && featured?.id===t.id)return;
- lastOnAirId=t.id;
- const current={...t,uri:t.uri||'spotify:track:'+t.id};
- // The highlighted song is a real carousel item so the restored n/N counter is accurate.
- list.tracks=list.tracks.filter(item=>item.id!==t.id);
- list.tracks.unshift(current);
- if(list.tracks.length>24)list.tracks.length=24;
- renderHero(0);
- renderTiles(list.tracks);
- $('hero-kicker').textContent='ESCUCHANDO AHORA';
- renderOtherDetails();
+ // Playback belongs in the persistent player; it must never replace editorial selections.
+ if(t?.id&&featured?.id===t.id)$('hero-kicker').textContent='ESCUCHANDO AHORA';
 }
 function renderArtistOrbit(items){
   const wrap=$('taste-artists'),line=$('taste-artist-names');
@@ -751,24 +747,96 @@ async function loadArtistExtras(){
   // La lectura de Me gusta se realiza en spotify-taste.js, con paginación.
 }
 
-async function loadHome(){
-  const connected=!!account;
-  let own=null;
-  if(connected){
-    try{own=await sp.api('/me/top/tracks?limit=30&time_range=short_term')}
-    catch(e){status('Spotify Top Tracks: '+e.message,true)}
-    accountTracks=(own?.items||[]).filter(t=>t?.id&&t?.uri);
-  }
-  const incoming=connected?accountTracks:(publicSnapshot?.tracks||[]);
-  list.tracks=arrangeForDisplay(uniqueTracks(incoming)).slice(0,24);
-  if(list.tracks.length){
-    renderHero(0);renderTiles(list.tracks);
-    if(connected&&!lastOnAirId){
-      $('hero-kicker').textContent='';
-    }else if(!connected){
-      $('hero-kicker').textContent='';
+const affinityCacheKey=range=>'tm_affinity_v1:'+account.id+':'+range;
+async function loadAffinity(range){
+ const key=affinityCacheKey(range);
+ try{
+  const cached=JSON.parse(sessionStorage.getItem(key)||'null'),age=Date.now()-Number(cached?.at);
+  if(cached&&age>=0&&age<900000&&Array.isArray(cached.items))return {items:cached.items.map(publicTrack).filter(Boolean)};
+ }catch{}
+ const data=await sp.api('/me/top/tracks?limit=50&time_range='+range);
+ try{sessionStorage.setItem(key,JSON.stringify({at:Date.now(),items:(data?.items||[]).map(publicTrack).filter(Boolean)}))}catch{}
+ return data;
+}
+function clearAffinityCache(){
+ if(!account)return;
+ try{for(const range of ['short_term','medium_term','long_term'])sessionStorage.removeItem(affinityCacheKey(range))}catch{}
+}
+async function loadDeepSaved(){
+ if(!account||!savedFirstPage)return;
+ const pages=Math.ceil((Number(savedFirstPage.total)||0)/50);
+ if(pages<2)return;
+ // Visit every saved page over time, starting in the older half of the collection.
+ const turn=selection.advance('saved-page',pages-1);
+ const offset=(1+(turn+Math.floor((pages-1)/2))%(pages-1))*50;
+ try{
+  const data=await sp.api('/me/tracks?limit=50&offset='+offset);
+  deepSaved=selection.unique([...(data?.items||[]).map(row=>row?.track),...deepSaved]).slice(0,250);
+  selection.setSource('saved-deep',deepSaved);
+ }catch(e){status('Selección de Me gusta: '+e.message,true)}
+}
+async function loadCatalogSample(){
+ if(!account||sp.cooldown)return;
+ const artists=[],seen=new Set();
+ const recentArtists=new Set(list.recent.slice(0,8).flatMap(t=>(t.artists||[]).map(a=>a.id||a.name)));
+ for(const track of selection.pool()){
+  const a=track.artists?.[0],id=a?.id||a?.name;
+  if(!a?.name||seen.has(id)||recentArtists.has(id))continue;
+  seen.add(id);artists.push(a);
+ }
+ if(!artists.length)return;
+ const a=artists[selection.advance('catalog-artist',artists.length)];
+ const query=new URLSearchParams({q:'artist:"'+a.name.replace(/"/g,'')+'"',type:'track',limit:'10',offset:String(selection.advance('catalog-page',3)*10)});
+ try{
+  const data=await sp.api('/search?'+query);
+  const known=new Set(selection.pool().map(selection.key));
+  const tracks=(data?.tracks?.items||[]).filter(t=>(t.artists||[]).some(item=>a.id?item.id===a.id:item.name?.toLocaleLowerCase()===a.name.toLocaleLowerCase())&&!known.has(selection.key(t)));
+  selection.setSource('catalog',tracks);
+ }catch(e){status('Catálogo: '+e.message,true)}
+}
+async function refreshHomeSources(){
+ if(!account||Date.now()-selectionRefreshAt<60000||homeSourcesRequest)return false;
+ selectionRefreshAt=Date.now();
+ homeSourcesRequest=loadDeepSaved();
+ try{await homeSourcesRequest;return true}finally{homeSourcesRequest=null}
+}
+async function loadHome(options={}){
+  selection.start(account?.id||'public');
+  if(account&&!homeSourcesReady){
+    const ranges=['short_term','medium_term','long_term'];
+    const results=await Promise.allSettled([
+      ...ranges.map(range=>loadAffinity(range)),
+      sp.api('/me/tracks?limit=50&offset=0')
+    ]);
+    const all=[];
+    ranges.forEach((range,index)=>{
+      const result=results[index];
+      if(result.status==='fulfilled'){
+        const tracks=(result.value?.items||[]).filter(t=>t?.id&&t?.uri);
+        selection.setSource(range,tracks);all.push(...tracks);
+      }else status('Spotify '+range+': '+result.reason?.message,true);
+    });
+    // The previous interface always exposed the first eight short-term favourites.
+    // On upgrade, count those as already shown rather than presenting the same opening again.
+    if(!selection.hasHistory&&results[0].status==='fulfilled'){
+      const legacy=results[0].value?.items||[];
+      selection.remember(legacy.slice(0,8));selection.remember(legacy.slice(0,1),{hero:true});
     }
-  }else{
+    accountTracks=selection.unique(all);
+    if(results[3].status==='fulfilled'){
+      savedFirstPage=results[3].value;
+      accountSaved=(savedFirstPage?.items||[]).map(row=>row?.track).filter(t=>t?.id);
+      selection.setSource('saved',accountSaved);
+    }
+    await loadDeepSaved();
+    await loadCatalogSample();
+    homeSourcesReady=true;
+  }else if(!account){
+    selection.setSource('published',publicSnapshot?.tracks||[]);
+    selection.setSource('saved',publicSnapshot?.liked||[]);
+  }
+  if(options.defer)return;
+  if(!renderHome()){
     $('hero-kicker').textContent='';
     $('hero-title').textContent=account?'TU MÚSICA':'CONECTA SPOTIFY';
     $('hero-description').textContent='';
@@ -844,15 +912,17 @@ function parsePlaylist(s){
   return null;
 }
 function bind(){
-  $('prev-slide').onclick=()=>{manualUntil=Date.now()+90000;renderHero(hero-1)};
-  $('next-slide').onclick=()=>{manualUntil=Date.now()+90000;renderHero(hero+1)};
-  $('pause-slide').onclick=()=>featured?void playSequence(list.tracks,hero):void toggle();
-  $('hero-play').onclick=()=>featured?void playSequence(list.tracks,hero):$('saved-trigger').click();
+  const moveHero=step=>{renderHero(hero+step);selection.remember(featured?[featured]:[],{hero:true})};
+  const playHero=()=>playSequence(list.tracks,Math.max(0,list.tracks.findIndex(t=>t.id===featured?.id)));
+  $('prev-slide').onclick=()=>moveHero(-1);
+  $('next-slide').onclick=()=>moveHero(1);
+  $('pause-slide').onclick=()=>featured?void playHero():void toggle();
+  $('hero-play').onclick=()=>featured?void playHero():$('saved-trigger').click();
   $('audio-toggle').onclick=()=>void toggle();
   $('audio-next').onclick=()=>void action(()=>sp.api('/me/player/next',{method:'POST'}));
   $('audio-previous').onclick=()=>void action(()=>sp.api('/me/player/previous',{method:'POST'}));
   const login=()=>void sp.login().catch(e=>{status(e.message,true);banner(e.message,10000)});
-  const logout=()=>{sp.logout();location.reload()};
+  const logout=()=>{clearAffinityCache();sp.logout();location.reload()};
   const openMyPlayer=()=>{
     if(!account){
       if(sp.isLogged?.()){
@@ -872,7 +942,7 @@ function bind(){
   $('collection-playlists').onclick=()=>document.getElementById('mixtapes').scrollIntoView({behavior:'smooth'});
   $('collection-liked').onclick=()=>document.getElementById('liked').scrollIntoView({behavior:'smooth'});
   $('top-refresh').onclick=()=>void loadHome();
-  $('random-discovery').onclick=()=>window.TransmissionTaste?.refreshRotation?void window.TransmissionTaste.refreshRotation():list.tracks.length?renderHero((hero+1)%list.tracks.length):banner('La colección pública aún no está preparada.');
+  $('random-discovery').onclick=()=>window.TransmissionTaste?.refreshRotation?void window.TransmissionTaste.refreshRotation():list.heroes.length?moveHero(1):banner('La colección pública aún no está preparada.');
   $('tm-station-play').onclick=()=>void playStation();
   $('shared-form').onsubmit=e=>{e.preventDefault();const id=parsePlaylist($('shared-link').value);if(!id){status('Introduce el enlace real de una playlist de Spotify.',true);return}void loadShared(id).catch(err=>status(err.message,true))}
   $('shared-button').onclick=()=>{if(list.shared)void playPlaylist(list.shared)};
@@ -881,6 +951,20 @@ function bind(){
   const toggle=$('menu-toggle'),nav=$('main-nav');
   toggle.onclick=()=>{const open=nav.classList.toggle('is-open');toggle.setAttribute('aria-expanded',String(open))};
   nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('is-open')));
+  document.addEventListener('tm:library-changed',event=>{
+    if(!account)return;
+    const {id,saved,track}=event.detail||{};
+    if(!validId(id)||typeof saved!=='boolean')return;
+    accountSaved=accountSaved.filter(t=>t.id!==id);
+    deepSaved=deepSaved.filter(t=>t.id!==id);
+    if(saved&&track?.id===id)accountSaved.unshift(track);
+    selection.setSource('saved',accountSaved);selection.setSource('saved-deep',deepSaved);
+    if(savedFirstPage){
+      const rows=(savedFirstPage.items||[]).filter(row=>row?.track?.id!==id);
+      if(saved&&track?.id===id)rows.unshift({track});
+      savedFirstPage={...savedFirstPage,items:rows.slice(0,50),total:Math.max(0,(Number(savedFirstPage.total)||0)+(saved?1:-1))};
+    }
+  });
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&account)void readPlaying()});
 }
 window.TransmissionRuntime={
@@ -906,6 +990,11 @@ window.TransmissionRuntime={
   get publicSnapshot(){return publicSnapshot},
   fillEmptyHome,
   setRotation,
+  refreshHomeSources,
+  get savedFirstPage(){return savedFirstPage},
+  get homeSaved(){return selection.unique([...accountSaved,...deepSaved])},
+  get rotationTracks(){return [...list.cards]},
+  get homeTracks(){return [...list.heroes,...list.cards]},
   get accountArtists(){return [...accountArtists]},
   get accountTracks(){return [...accountTracks]},
   get playlists(){return [...list.playlists]},
@@ -922,8 +1011,14 @@ try{
       account=await sp.api('/me');
       status('Conectado como '+(account.display_name||account.id)+'. Cargando canciones y playlists...');
       renderOtherDetails();
-      const results=await Promise.allSettled([loadHome(),loadPlaylists(),loadRecent(),sdk(),loadArtistExtras()]);
-      ready=true;
+      selection.start(account.id);
+      const recentRequest=loadRecent(),playlistsRequest=loadPlaylists(),artistsRequest=loadArtistExtras();
+      const homeRequest=Promise.allSettled([loadHome({defer:true}),recentRequest,playlistsRequest,artistsRequest]).then(async()=>{
+        if(!renderHome())await loadHome();
+        markReady();
+      });
+      // Show the selection as soon as its metadata is ready, independently of SDK connection.
+      const results=await Promise.allSettled([homeRequest,playlistsRequest,recentRequest,sdk(),artistsRequest]);
       installOwnerExport();
       const playerFailed=results[3].status==='rejected';
       await readPlaying();
@@ -947,7 +1042,7 @@ try{
         await loadRecent();
         renderArtistOrbit(publicSnapshot?.artists||[]);
         renderOtherDetails();
-        ready=true;
+        markReady();
         if(e.status===429)banner(connectionMessage(),10000);
         const requested=new URLSearchParams(location.search).get('playlist');
         if(requested&&/^[a-zA-Z0-9]{22}$/.test(requested))await loadShared(requested);
@@ -958,7 +1053,7 @@ try{
     await loadPlaylists();
     await loadRecent();
     renderArtistOrbit(publicSnapshot?.artists||[]);
-    ready=true;
+    markReady();
     const requested=new URLSearchParams(location.search).get('playlist');
     if(requested&&/^[a-zA-Z0-9]{22}$/.test(requested)){
       await loadShared(requested);
@@ -967,4 +1062,5 @@ try{
     }
   }
 }catch(e){status('Error de conexión: '+e.message,true)}
+finally{if(!ready)markReady()}
 })();

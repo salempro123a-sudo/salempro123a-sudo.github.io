@@ -74,6 +74,20 @@ La búsqueda utiliza páginas de diez resultados y las funciones de reproducció
 
 La web usa carátulas y metadatos de Spotify. No distribuye el reproductor, las tipografías privadas ni las fotografías editoriales de NTS. Las capas antiguas de CSS y el segundo reproductor se retiraron; las versiones anteriores siguen en el historial Git.
 
+## Variedad de la portada
+
+`transmission-selection.js` separa el carrusel de portada, las ocho tarjetas y la mezcla de favoritas. Deduplica ediciones de la misma canción y distribuye artistas y álbumes. La memoria de canciones mostradas y portadas anteriores se guarda en este navegador por cuenta; prioriza canciones sin mostrar y evita repetir la portada anterior mientras haya alternativas. Una canción que esté sonando actualiza el reproductor, sin sustituir las selecciones editoriales.
+
+La portada combina hasta cincuenta canciones por cada uno de los tres periodos de afinidad, las favoritas recientes, una página de favoritas antiguas y una búsqueda de catálogo de diez resultados de un artista de la colección. La página antigua cambia entre visitas y recorre la colección completa con el tiempo, empezando por su mitad más antigua. Son lecturas con los permisos existentes. La afinidad se conserva quince minutos en la pestaña, por cuenta; esa caché se borra al desconectar. El catálogo y las páginas antiguas no se consultan mediante temporizadores.
+
+**Otras canciones** prepara una nueva portada y tarjetas con la selección cargada. Como máximo una vez por minuto incorpora otra página de favoritas y solicita la selección de descubrimiento existente; ese descubrimiento se reutiliza durante cinco minutos. Las favoritas de la portada comienzan en **Mezcla**, mantienen una selección estable al navegar y al redimensionar, y se renuevan con la portada o al recorrer sus páginas. **Recientes**, **Antiguas**, **A–Z** y **Artista** siguen disponibles; la página **Ver todas** conserva su ordenación independiente. El historial mantiene su orden real de escucha.
+
+**Explorar** tiene diez canciones seleccionadas de forma independiente, evitando las que ya aparecen en portada y en la mezcla visible de favoritas. Sus canciones permanecen estables al volver atrás y adelante; se renuevan al cambiar la rotación. Ya no copia las últimas escuchas en esa página.
+
+La selección se renueva al entrar y mediante sus controles; renovar la vista no inicia audio ni reemplaza una cola en reproducción. La memoria queda limitada a ochocientas identidades de canciones y treinta portadas. Los datos personales y esa memoria no se publican en GitHub.
+
+Se revisó el código de esta ampliación. No se ejecutaron pruebas automatizadas ni se comprobó la selección con una cuenta Premium conectada.
+
 ## Selección pública opcional
 
 `featured.json` sigue con `status: pending_authorization`. Los visitantes sin sesión ven acciones para conectar Spotify. El catálogo privado de una cuenta nunca se publica automáticamente.

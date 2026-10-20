@@ -29,9 +29,9 @@ function refresh(){
  const current=rt.state?.trackId;
  $('hero-kicker').textContent=current&&rt.featured?.id===current?(rt.state.playing?'ESCUCHANDO AHORA':'EN PAUSA'):'';
  $('tm-open-spotify').href=track?.id?'https://open.spotify.com/track/'+track.id:'https://open.spotify.com/';
- collage('tm-collection-art-1',rt.account?rt.accountTracks:rt.publicSnapshot?.tracks);
+ collage('tm-collection-art-1',rt.rotationTracks);
  collage('tm-collection-art-2',rt.playlists);
- collage('tm-collection-art-3',window.TransmissionTaste?.getLiked?.()||[]);
+ collage('tm-collection-art-3',window.TransmissionTaste?.getHomeLiked?.()||[]);
  collage('tm-artist-backdrop',rt.accountArtists);
 }
 $('tm-up-next').onclick=()=>!rt.account?$('saved-trigger').click():rt.upcomingTrack?$('tm-next').click():$('tm-station-play').click();

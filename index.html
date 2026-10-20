@@ -10,18 +10,19 @@
   <link rel="stylesheet" href="./transmission-pages.css?v=20261019artist3">
   <link rel="stylesheet" href="./transmission-archive.css?v=20261019artist3">
   <script defer src="./spotify-auth.js?v=20261019catalog1"></script>
-  <script defer src="./spotify-editorial.js?v=20261019artist3"></script>
+  <script defer src="./transmission-selection.js?v=20261019variety1"></script>
+  <script defer src="./spotify-editorial.js?v=20261019variety1"></script>
   <script defer src="./spotify-controls.js?v=20261019catalog1"></script>
-  <script defer src="./spotify-taste.js?v=20261019artist3"></script>
+  <script defer src="./spotify-taste.js?v=20261019variety1"></script>
   <script defer src="./spotify-library.js?v=20261019artist3"></script>
   <script defer src="./spotify-polish.js?v=20261019catalog1"></script>
   <script defer src="./spotify-artist.js?v=20261019artist3"></script>
   <script defer src="./spotify-queue.js?v=20261019artist3"></script>
   <script defer src="./spotify-favorites.js?v=20261019catalog1"></script>
   <script defer src="./spotify-track-actions.js?v=20261019artist3"></script>
-  <script defer src="./spotify-catalog.js?v=20261019artist3"></script>
+  <script defer src="./spotify-catalog.js?v=20261019variety1"></script>
   <script defer src="./spotify-search.js?v=20261019artist3"></script>
-  <script defer src="./transmission-ui.js?v=20261019artist3"></script>
+  <script defer src="./transmission-ui.js?v=20261019variety1"></script>
   <script defer src="./transmission-listening.js?v=20261019artist3"></script>
   <script defer src="./transmission-archive.js?v=20261019artist3"></script>
   <script defer src="./transmission-navigation.js?v=20261019artist3"></script>
@@ -77,14 +78,14 @@
     <div><span class="eyebrow" id="pick-period" hidden></span><h2>EN ROTACIÓN <span class="heading-indicator tm-spin-symbol">✳</span></h2></div>
     <button class="view-all" id="top-refresh" type="button">OTRAS CANCIONES <span>↗</span></button>
   </div>
-  <div class="picks-grid" id="picks-grid" aria-label="Canciones más escuchadas"></div>
+  <div class="picks-grid" id="picks-grid" aria-label="Selección de canciones"></div>
 </section>
 <section class="catalog-section tm-liked-section" id="liked" aria-label="Canciones guardadas">
   <div class="section-heading">
     <div><span class="eyebrow" id="liked-kicker" hidden></span><h2>ME GUSTA</h2></div>
     <div class="tm-liked-actions">
   <button class="view-all" id="tm-liked-play" type="button" disabled>▶ ESCUCHAR</button>
-  <select id="tm-liked-sort-inline" class="tm-liked-sort-inline" aria-label="Ordenar canciones guardadas"><option value="new">RECIENTES</option><option value="old">ANTIGUAS</option><option value="az">A–Z</option><option value="artist">ARTISTA</option></select>
+  <select id="tm-liked-sort-inline" class="tm-liked-sort-inline" aria-label="Selección de canciones guardadas"><option value="mix">MEZCLA</option><option value="new">RECIENTES</option><option value="old">ANTIGUAS</option><option value="az">A–Z</option><option value="artist">ARTISTA</option></select>
   <div class="tm-liked-pager" id="tm-liked-pager" aria-label="Navegar canciones guardadas">
     <span id="tm-liked-position" class="tm-liked-position" aria-live="polite"></span>
     <button id="tm-liked-prev" type="button" aria-label="Página anterior" disabled>←</button>
