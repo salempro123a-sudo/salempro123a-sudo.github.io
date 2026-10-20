@@ -104,6 +104,7 @@ function compose(){
 }
 window.TransmissionSelection={start,key,unique,advance,remember,choose,setSource,compose,
  setRecent:tracks=>{recent=unique(tracks)},pool,
+ getSource:name=>[...(sources.get(name)||[])],
  get hasHistory(){return shown.size>0},
  get home(){return currentHome}
 };

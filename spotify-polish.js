@@ -3,31 +3,24 @@
 'use strict';
 const rt=window.TransmissionRuntime;
 if(!rt)return;
-let recentArtists=[];
-function updateArtists(track){
- if(!rt.account||!track)return;
- const nodes=[];
- const known=new Set();
- const add=name=>{
-   const text=String(name||'').trim();const key=text.toLocaleLowerCase();
-   if(text&&!known.has(key)){known.add(key);nodes.push(text)}
- };
- (track.artists||[]).forEach(a=>add(a.name));
- for(const a of recentArtists)add(a);
- for(const a of rt.accountArtists||[])add(a.name);
- recentArtists=nodes.slice(0,12);
+function updateArtists(){
+ if(!rt.account||!window.TransmissionProfile)return;
+ const profile=window.TransmissionProfile.build([
+   ...(rt.recent||[]),...(rt.recentEvents||[]).map(entry=>entry.track)
+ ],window.TransmissionSelection.getSource('short_term'),rt.accountArtists||[]);
  const container=document.getElementById('taste-artist-names');
  const block=document.getElementById('taste-artists');
  if(!container||!block)return;
- container.replaceChildren(...nodes.slice(0,6).map(name=>{
-   const button=document.createElement('button');button.type='button';button.textContent=name;
-   button.title='Explorar '+name;
-   button.onclick=()=>window.TransmissionArtist?.open?.(name);
+ container.replaceChildren(...profile.artists.slice(0,6).map(({artist})=>{
+   const button=document.createElement('button');button.type='button';button.textContent=artist.name;
+   button.title='Explorar '+artist.name;
+   button.onclick=()=>window.TransmissionArtist?.open?.(artist);
    return button
  }));
  block.hidden=!container.childElementCount;
 }
-window.addEventListener('tm:account-track',event=>updateArtists(event.detail?.track));
+window.addEventListener('tm:account-track',updateArtists);
+window.addEventListener('tm:ready',updateArtists);
 window.addEventListener('tm:playback',event=>{
  const p=event.detail||{};
  const playing=!!p.playing;

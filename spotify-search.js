@@ -4,7 +4,8 @@
 const field=document.getElementById('tm-catalog-query'),trigger=document.getElementById('search-trigger');
 if(!field||!trigger)return;
 function focus(){
- if(!window.TransmissionCatalog?.isOpen||window.TransmissionPages?.current?.kind!=='search')window.TransmissionCatalog?.open();
+ const page=window.TransmissionPages?.current;
+ if(!window.TransmissionCatalog?.isOpen||page?.kind!=='search'||page.entry!=='search'||page.query)window.TransmissionCatalog?.openSearch();
  requestAnimationFrame(()=>field.focus({preventScroll:true}));
 }
 trigger.onclick=focus;

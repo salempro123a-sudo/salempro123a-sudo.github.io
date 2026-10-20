@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const selection=window.TransmissionSelection;
 const list={tracks:[],heroes:[],cards:[],playlists:[],recent:[],liked:[],shared:null},owner=sp.CONFIG.ownerId;
 let account=null,player=null,device=null,deviceSelected=false,hero=0,featured=null;
-let selected=null,lastPlayerState=null,poll=null,sdkPromise=null;
+let selected=null,lastPlayerState=null,poll=null,sdkPromise=null,playerInitPromise=null,connectingPlayer=null;
 let lastPlayback=null,publicSnapshot=null,accountTracks=[],accountSaved=[],accountArtists=[],station=null,ready=false;
 let connectionError=null,outputDevice=null,stagedTracks=[],queueTail=Promise.resolve(),queueRevision=0;
 let recentEvents=[];
@@ -331,9 +331,22 @@ function renderOtherDetails(){
   $('reconnect-button').textContent=sp.isLogged?.()?'DESCONECTAR SPOTIFY':'CONECTAR SPOTIFY';
   window.TransmissionUI?.refresh?.();
 }
-function playFeedback(msg,err=false){status(msg,err)}
+function playFeedback(msg,err=false){status(msg,err);if(err)banner(msg,6500)}
 async function sdk(){
   if(player)return player;
+  if(playerInitPromise)return playerInitPromise;
+  playerInitPromise=connectPlayer();
+  try{return await playerInitPromise}finally{playerInitPromise=null}
+}
+function primePlayback(){
+  if(!account)return;
+  const candidate=player||connectingPlayer;
+  if(candidate){
+    try{candidate.activateElement?.()?.catch?.(error=>playFeedback(error.message,true))}
+    catch(error){playFeedback(error.message,true)}
+  }else void sdk().catch(error=>playFeedback(error.message,true));
+}
+async function connectPlayer(){
   if(!sdkPromise){
     sdkPromise=new Promise((resolve,reject)=>{
       if(window.Spotify){resolve();return}
@@ -344,14 +357,16 @@ async function sdk(){
       document.head.appendChild(script)
     });
   }
-  await sdkPromise;
+  try{await sdkPromise}catch(error){sdkPromise=null;throw error}
   const p=new Spotify.Player({name:'TRANSMISSION',getOAuthToken:async fn=>{
     try{fn(await sp.getToken())}catch(e){status(e.message,true)}
   },volume:.7});
-  p.addListener('ready',({device_id})=>{device=device_id;status('Reproductor listo. Puedes escuchar dentro de esta página.');$('player-device').textContent='WEB PLAYER / LISTO'});
-  p.addListener('not_ready',()=>{device=null;deviceSelected=false;status('El dispositivo web dejó de estar disponible.',true)});
+  connectingPlayer=p;
+  const active=()=>p===player||p===connectingPlayer;
+  p.addListener('ready',({device_id})=>{if(!active())return;device=device_id;status('Reproductor listo. Puedes escuchar dentro de esta página.');$('player-device').textContent='WEB PLAYER / LISTO'});
+  p.addListener('not_ready',()=>{if(!active())return;device=null;deviceSelected=false;status('El dispositivo web dejó de estar disponible.',true)});
   p.addListener('player_state_changed',state=>{
-    if(!state)return;
+    if(!state||!active())return;
     lastPlayerState=state;
     const t=state.track_window?.current_track;
     if(t){
@@ -361,16 +376,21 @@ async function sdk(){
         external_urls:{spotify:'https://open.spotify.com/track/'+t.id}});
     }
     const isPlaying=!state.paused;
+    if(isPlaying&&t)notePlay(t);
     lastPlayback={trackId:t?.id||null,playing:isPlaying,position:state.position||0,duration:t?.duration_ms||0,
       shuffle:state.shuffle,repeat:state.repeat_mode,deviceId:device};
     window.dispatchEvent(new CustomEvent('tm:playback',{detail:lastPlayback}));
     $('audio-toggle').setAttribute('aria-label',isPlaying?'Pausar':'Reproducir');
   });
-  p.addListener('autoplay_failed',()=>status('Spotify necesita un clic para iniciar audio. Pulsa ▶ sobre una canción.',true));
-  ['authentication_error','account_error','playback_error','initialization_error'].forEach(ev=>p.addListener(ev,({message})=>status('Spotify: '+message,true)));
-  const ok=await p.connect();
-  if(!ok)throw new Error('Spotify no pudo conectar el reproductor. Comprueba Premium y la autorización.');
-  player=p;return p;
+  p.addListener('autoplay_failed',()=>{if(active())playFeedback('Pulsa de nuevo ▶ para activar el audio en esta pestaña.',true)});
+  ['authentication_error','account_error','playback_error','initialization_error'].forEach(ev=>p.addListener(ev,({message})=>{if(active())playFeedback('Spotify: '+message,true)}));
+  try{
+    const ok=await p.connect();
+    if(!ok)throw new Error('Spotify no pudo conectar el reproductor. Revisa Diagnóstico.');
+    player=p;return p;
+  }catch(error){
+    try{p.disconnect?.()}catch{}device=null;deviceSelected=false;throw error;
+  }finally{if(connectingPlayer===p)connectingPlayer=null}
 }
 async function activatePlayer(){
   if(outputDevice&&outputDevice!==device)return;
@@ -411,12 +431,12 @@ async function action(fn){
   if(!account){status('Conecta Spotify Premium para controlar el Web Player. Puedes usar la reproducción oficial incrustada.',true);return false}
   try{
     await fn();
-    status('Spotify recibió la orden. Reproduciendo en el dispositivo seleccionado.');
+    status('Orden enviada a Spotify.');
     setTimeout(readPlaying,1100);
     return true;
   }catch(e){
     if(e.status===404)deviceSelected=false;
-    status(e.message||String(e),true);
+    playFeedback(e.message||String(e),true);
     return false;
   }
 }
@@ -440,26 +460,28 @@ function replacePlayback(request,priorQueue,fn){
 }
 async function playSequence(items,startIndex=0){
  const selection=uniqueTracks(items,Infinity).filter(t=>t?.uri);
- if(!Number.isInteger(startIndex)||startIndex<0||startIndex>=selection.length)return false;
+ if(!Number.isInteger(startIndex)||startIndex<0||startIndex>=selection.length){playFeedback('No hay canciones disponibles en esta selección.',true);return false}
  const chosen=selection[startIndex],tracks=selection.filter(t=>t.is_playable!==false);
  startIndex=tracks.findIndex(t=>t.id===chosen.id);
- if(startIndex<0){status('Spotify indica que esta canción no está disponible para reproducir.',true);return false}
- if(!tracks.length){status('La selección no contiene canciones disponibles.',true);return false}
- if(!account){status('Conecta una cuenta Premium para reproducir la sesión.',true);return false}
- player?.activateElement?.();
+ if(startIndex<0){playFeedback('Spotify indica que esta canción no está disponible para reproducir.',true);return false}
+ if(!tracks.length){playFeedback('La selección no contiene canciones disponibles.',true);return false}
+ if(!account){playFeedback('Conecta Spotify para reproducir esta selección.',true);return false}
+ primePlayback();
  const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
  const nextStation={tracks,index:startIndex,end:Math.min(tracks.length,startIndex+sequenceWindow),loop:false,busy:false,pending:null};
  const ok=await replacePlayback(request,priorQueue,async()=>{
    await activatePlayer();
    const target='&device_id='+encodeURIComponent(outputDevice||device);
-   await sp.api('/me/player/shuffle?state=false'+target,{method:'PUT'});
-   await sp.api('/me/player/repeat?state=off'+target,{method:'PUT'});
+   if(nextStation.end-startIndex>1){
+     await sp.api('/me/player/shuffle?state=false'+target,{method:'PUT'});
+     await sp.api('/me/player/repeat?state=off'+target,{method:'PUT'});
+   }
    await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
      method:'PUT',body:JSON.stringify({uris:tracks.slice(startIndex,nextStation.end).map(t=>t.uri)})
    });
  });
  if(request!==playbackGeneration)return false;
- if(!ok){station=previousStation;queueChanged();status('Spotify no inició la secuencia. Consulta Diagnóstico.',true);banner('No se pudo iniciar la selección. Inténtalo de nuevo.');return false}
+ if(!ok){station=previousStation;queueChanged();return false}
  station=nextStation;
  stagedTracks=[];queueChanged();
  updatePlayerSong(tracks[startIndex]);
@@ -475,7 +497,7 @@ async function playTrack(t){
     status('Reproductor oficial disponible. Para el reproductor avanzado, conecta Spotify Premium.');
     return;
   }
-  player?.activateElement?.();
+  primePlayback();
   const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
     await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
@@ -498,7 +520,7 @@ async function playPlaylist(p){
     status('Playlist disponible en el reproductor oficial incrustado. Conecta Premium para usar controles avanzados.');
     return;
   }
-  player?.activateElement?.();
+  primePlayback();
   const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
     await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
@@ -517,7 +539,7 @@ async function playPlaylistAt(playlist,index){
  if(!playlist?.id||!Number.isInteger(index)||index<0)return false;
  if(!account){showOfficialEmbed('playlist',playlist.id);return false}
  const previousStation=station,request=++playbackGeneration,priorQueue=detachStation();
- player?.activateElement?.();
+ primePlayback();
  const ok=await replacePlayback(request,priorQueue,async()=>{
      await activatePlayer();
    await sp.api('/me/player/play?device_id='+encodeURIComponent(outputDevice||device),{
@@ -534,7 +556,7 @@ async function playPlaylistAt(playlist,index){
 }
 async function toggle(){
   if(stagedTracks.length&&!station)return playSequence(stagedTracks);
-  player?.activateElement?.();
+  primePlayback();
   await action(async()=>{
     const target=outputDevice||lastPlayback?.deviceId;
     if(target&&target!==device){
@@ -724,13 +746,13 @@ function renderHighlighted(t){
 function renderArtistOrbit(items){
   const wrap=$('taste-artists'),line=$('taste-artist-names');
   if(!wrap||!line)return;
-  const artists=(items||[]).slice(0,6).map(x=>String(x?.name||'').trim()).filter(Boolean);
+  const artists=(items||[]).filter(x=>x?.name?.trim()).slice(0,6);
   if(!artists.length){wrap.hidden=true;line.replaceChildren();return}
   line.replaceChildren();
-  artists.forEach(name=>{
-    const button=create('button','',name);button.type='button';
-    button.title='Explorar '+name;
-    button.onclick=()=>window.TransmissionArtist?.open?.(name);
+  artists.forEach(artist=>{
+    const button=create('button','',artist.name);button.type='button';
+    button.title='Explorar '+artist.name;
+    button.onclick=()=>window.TransmissionArtist?.open?.(artist);
     line.append(button);
   });
   wrap.hidden=false;
@@ -968,7 +990,7 @@ function bind(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&account)void readPlaying()});
 }
 window.TransmissionRuntime={
-  sdk,activatePlayer,toggle,readPlaying,playTrack,playPlaylist,playPlaylistAt,playSequence,
+  sdk,primePlayback,activatePlayer,toggle,readPlaying,playTrack,playPlaylist,playPlaylistAt,playSequence,
   action,status,notify:banner,enqueueTracks,changeQueue,clearQueue:()=>serializeQueue(()=>editManagedQueue(()=>[])),transferPlayback,releaseQueue,
   get ready(){return ready},
   get diagnostics(){return [...diagLog]},

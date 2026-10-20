@@ -53,7 +53,7 @@ function busy(button,fn){
  Promise.resolve().then(fn).catch(warn).finally(()=>{loading=false;button.disabled=old});
 }
 $('tm-play').addEventListener('click',e=>{
- rt.player?.activateElement?.();
+ rt.primePlayback?.();
  busy(e.currentTarget,async()=>rt.toggle());
 });
 $('tm-prev').addEventListener('click',e=>busy(e.currentTarget,()=>rt.action(()=>sp.api('/me/player/previous',{method:'POST'}))));

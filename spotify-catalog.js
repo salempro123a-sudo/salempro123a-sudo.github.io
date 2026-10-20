@@ -11,6 +11,7 @@ const keys={track:'tracks',artist:'artists',album:'albums',playlist:'playlists'}
 const valid=item=>/^[A-Za-z0-9]{22}$/.test(item?.id||'');
 const cache=new Map(),requests=new Map();
 let history=[],cursor=-1,serial=0,timer=null,lastFocus=null,opened=false;
+let profileRequest=null,profileOwner=null,profileWindow=0,profileReads=0,profileMisses=new Set();
 const view=()=>history[cursor];
 function topOffset(){shell.style.setProperty('--catalog-top',Math.ceil(document.querySelector('.site-header').getBoundingClientRect().height)+'px')}
 function hideOtherViews(){for(const name of ['TransmissionLibrary','TransmissionArtist','TransmissionTaste']){if(name==='TransmissionTaste')window[name]?.closeLikedAll?.({routed:true});else window[name]?.close?.({routed:true})}}
@@ -28,7 +29,8 @@ function navigation(){
  const current=view();
  shell.dataset.kind=current?.kind||'search';
  $('tm-catalog-title').hidden=current?.kind!=='search';
- $('tm-catalog-title').textContent=current?.query||'EXPLORAR';
+ $('tm-catalog-title').textContent=current?.query||(current?.entry==='search'?'BUSCAR':'EXPLORAR');
+ if(current?.kind==='search')shell.setAttribute('aria-label',current.entry==='search'?'Buscar música':'Explorar música');
  $('tm-catalog-title').classList.toggle('tm-visually-hidden',!!current?.query);
  $('tm-catalog-tabs').hidden=current?.kind!=='search'||!current?.query;
  for(const button of document.querySelectorAll('#tm-catalog-tabs button')){const active=button.dataset.type===current?.filter;button.setAttribute('aria-pressed',String(active))}
@@ -44,9 +46,10 @@ function search(query='',filter='track'){
  query=String(query).trim().slice(0,200);
  if(!labels[filter])filter='track';
  remember(query);
- if(opened&&view()?.kind==='search'&&view().query===query&&view().filter===filter&&view().loaded&&!view().loading){field.focus();return}
- push({kind:'search',query,filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false});field.focus();
+ if(opened&&view()?.kind==='search'&&view().entry==='search'&&view().query===query&&view().filter===filter){field.focus();if(query&&!view().loaded&&!view().loading)void loadSearch();return}
+ push({kind:'search',entry:'search',query,filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false});field.focus();
 }
+function explore(){push({kind:'search',entry:'explore',query:'',filter:'track',items:[],offset:0,next:false,total:0,loaded:false,loading:false})}
 async function request(endpoint){
  const account=rt.account?.id;if(!account)throw Error('Conecta Spotify para explorar el catálogo.');
  const key=account+':'+endpoint,known=cache.get(key);
@@ -63,8 +66,8 @@ function message(text,action){
  if(action){const button=make('button','tm-catalog-button',action.label);button.type='button';button.onclick=action.run;host.append(button)}
  content.append(host);
 }
-function heading(title,meta=''){
- const head=make('div','tm-catalog-section-head');head.append(make('h3','',title));if(meta)head.append(make('span','',meta));content.append(head);return head;
+function heading(title,meta='',parent=content){
+ const head=make('div','tm-catalog-section-head');head.append(make('h3','',title));if(meta)head.append(make('span','',meta));parent.append(head);return head;
 }
 function card(item,type,options={}){
  const button=make('button','tm-catalog-card');button.type='button';
@@ -88,23 +91,74 @@ function moreButton(state,load,label='CARGAR MÁS'){
    if(restore&&opened&&view()===source){const added=content.querySelectorAll('.tm-song-row,.tm-catalog-card')[count];(added?.querySelector('.tm-song-name')||added||content.querySelector('[data-catalog-focus="more"]'))?.focus({preventScroll:true})}
  };content.append(button);
 }
-function browse(){
+function searchStart(){
  const recent=recentSearches();
  if(recent.length){
    const head=heading('BÚSQUEDAS RECIENTES');
-   const clear=make('button','tm-text-action','BORRAR');clear.type='button';clear.onclick=()=>{try{localStorage.removeItem(recentKey())}catch{}renderCurrent()};head.append(clear);
+   const clear=make('button','tm-text-action','BORRAR');clear.type='button';clear.onclick=()=>{try{localStorage.removeItem(recentKey())}catch{}renderCurrent();field.focus({preventScroll:true})};head.append(clear);
    const list=make('div','tm-catalog-recents');
    recent.forEach(query=>{const link=make('a','',query);link.href='#/buscar?'+new URLSearchParams({q:query});list.append(link)});
    content.append(list);
  }
- heading('GÉNEROS');
- const tags=make('div','tm-catalog-genres');
- for(const [label,genre] of [['JAZZ','jazz'],['SOUL','soul'],['FUNK','funk'],['ELECTRÓNICA','electronic'],['AMBIENT','ambient'],['HIP HOP','hip-hop'],['ROCK','rock'],['INDIE','indie'],['CLÁSICA','classical'],['REGGAE','reggae'],['LATINA','latin'],['EXPERIMENTAL','experimental']]){
-   const button=make('button','');button.type='button';button.append(make('span','',label),make('span','tm-genre-arrow','↗'));button.onclick=()=>search('genre:'+genre);tags.append(button);
+ if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
+}
+function listeningProfile(){
+ const owner=rt.account?.id||'guest',metadata=[...(rt.accountArtists||[])];
+ for(const [key,entry] of cache){if(entry.value?.id&&key===owner+':/artists/'+entry.value.id)metadata.push(entry.value)}
+ return window.TransmissionProfile.build([
+  ...(rt.recent||[]),...(rt.recentEvents||[]).map(entry=>entry.track)
+ ],window.TransmissionSelection.getSource('short_term'),metadata);
+}
+function renderListeningProfile(host,profile=listeningProfile()){
+ if(!host)return;
+ const focused=host.contains(document.activeElement)?document.activeElement:null;
+ const href=focused?.getAttribute('href'),genre=focused?.dataset.genre;
+ host.replaceChildren();
+ if(profile.artists.length){
+   heading('ÚLTIMOS ARTISTAS','',host);
+   const list=make('div','tm-catalog-recents');
+   for(const {artist} of profile.artists){
+     const link=make('a','',artist.name);
+     link.href=valid(artist)?'#/artista/'+artist.id+'?'+new URLSearchParams({nombre:artist.name}):'#/buscar?'+new URLSearchParams({q:artist.name,tipo:'artist'});
+     list.append(link);
+   }
+   host.append(list);
  }
- content.append(tags);
- const artists=rt.accountArtists||[];
- if(artists.length){const head=heading('TUS ARTISTAS');const all=make('a','tm-text-action','↗');all.href='#/rotacion?vista=artists';all.setAttribute('aria-label','Ver tus artistas');head.append(all);const grid=make('div','tm-catalog-grid');artists.forEach(artist=>grid.append(card(artist,'artist')));content.append(grid)}
+ if(profile.genres.length){
+   heading('GÉNEROS','',host);const tags=make('div','tm-catalog-genres');
+   for(const item of profile.genres){
+     const button=make('button','');button.type='button';button.dataset.genre=item.id;
+     button.append(make('span','',item.label),make('span','tm-genre-arrow','↗'));
+     button.onclick=()=>search('genre:"'+item.query.replace(/"/g,'')+'"');tags.append(button);
+   }
+   host.append(tags);
+ }
+ if(href||genre){const next=Array.from(host.querySelectorAll('a,button')).find(node=>href?node.getAttribute('href')===href:node.dataset.genre===genre);next?.focus({preventScroll:true})}
+}
+async function enrichListeningProfile(profile){
+ if(!rt.account||profileRequest)return;
+ const owner=rt.account.id;
+ if(profileOwner!==owner||Date.now()-profileWindow>=300000){profileOwner=owner;profileWindow=Date.now();profileReads=0;profileMisses=new Set()}
+ const missing=profile.artists.map(entry=>entry.artist).filter(artist=>valid(artist)&&!Array.isArray(artist.genres)&&!profileMisses.has(artist.id)).slice(0,Math.max(0,6-profileReads));
+ if(!missing.length)return;
+ profileRequest=(async()=>{
+   for(let offset=0;offset<missing.length;offset+=2){
+     if(rt.account?.id!==owner||sp.cooldown)break;
+     const group=missing.slice(offset,offset+2);profileReads+=group.length;
+     for(const artist of group)profileMisses.add(artist.id);
+     const results=await Promise.allSettled(group.map(artist=>request('/artists/'+artist.id)));
+     for(const result of results)if(result.status==='rejected')rt.status('Perfil de escucha: '+result.reason?.message,true);
+     if(results.some(result=>result.status==='rejected'&&result.reason?.status===429))break;
+   }
+ })();
+ try{await profileRequest}finally{
+   profileRequest=null;
+   if(rt.account?.id===owner&&opened&&view()?.kind==='search'&&view().entry!=='search'&&!view().query)renderListeningProfile($('tm-listening-profile'));
+ }
+}
+function browse(){
+ const host=make('div','tm-listening-profile');host.id='tm-listening-profile';content.append(host);
+ const profile=listeningProfile();renderListeningProfile(host,profile);void enrichListeningProfile(profile);
  const state=view();
  if(rt.ready&&!state.suggestions?.length){
    state.suggestions=window.TransmissionSelection.choose(window.TransmissionSelection.pool(),{
@@ -117,7 +171,7 @@ function browse(){
  else if(!rt.account)message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});
 }
 function renderSearch(state){
- if(!state.query){browse();return}
+ if(!state.query){if(state.entry==='search')searchStart();else browse();return}
  if(!rt.account){message('',{label:'CONECTAR SPOTIFY',run:()=>$('saved-trigger').click()});return}
  if(state.match&&state.filter==='track'){
    const match=make('button','tm-catalog-match');match.type='button';
@@ -166,7 +220,7 @@ function detailHeading(item,type,extra=''){
 function detailActions(copy,state){
  const actions=make('div','tm-catalog-detail-actions');
  for(const [label,title,operation] of [['▶ ESCUCHAR','Reproducir el álbum',()=>playAlbum(state,0)],['+','Añadir el álbum a la cola',async()=>{await allAlbumTracks(state);return rt.enqueueTracks(state.tracks)}]]){
-   const button=make('button','tm-catalog-button',label);button.type='button';button.title=title;button.setAttribute('aria-label',title);button.disabled=!state.tracks?.length;button.onclick=()=>void ui.run(button,operation);actions.append(button);
+   const button=make('button','tm-catalog-button',label);button.type='button';button.title=title;button.setAttribute('aria-label',title);button.disabled=!state.tracks?.length;button.onclick=()=>void ui.run(button,operation,{play:label.startsWith('▶')});actions.append(button);
  }
  const link=make('a','tm-catalog-link','SPOTIFY ↗');link.href='https://open.spotify.com/album/'+state.item.id;link.target='_blank';link.rel='noopener noreferrer';actions.append(link);copy.append(actions);
 }
@@ -229,7 +283,7 @@ function renderArtist(state){
  const data=artistData(state),page=artistPage(state),releases=state.tab==='releases',item=data.item;
  const copy=detailHeading(item,'ARTISTA'),actions=make('div','tm-catalog-detail-actions');
  const play=make('button','tm-catalog-button tm-artist-play','▶ ESCUCHAR');play.type='button';play.disabled=state.loading||!rt.account;
- play.onclick=()=>void ui.run(play,async()=>{if(!data.songs.loaded)await loadArtist(state,false,'tracks');if(view()===state&&data.songs.items.length)return rt.playSequence(data.songs.items)});actions.append(play);
+ play.onclick=()=>void ui.run(play,async()=>{if(!data.songs.loaded)await loadArtist(state,false,'tracks');if(view()!==state)return false;if(state.error)throw Error(state.error);if(!data.songs.items.length)throw Error('Este artista no tiene canciones disponibles en la selección.');return rt.playSequence(data.songs.items)},{play:true});actions.append(play);
  const external=make('a','tm-catalog-link','SPOTIFY ↗');external.href='https://open.spotify.com/artist/'+item.id;external.target='_blank';external.rel='noopener noreferrer';actions.append(external);copy.append(actions);
  const nav=make('nav','tm-artist-tabs');nav.setAttribute('aria-label','Música del artista');
  for(const [tab,label] of [['tracks','CANCIONES'],['releases','DISCOS']]){
@@ -293,7 +347,7 @@ async function loadArtist(state,append=false,tab=state.tab){
      page.next=!!result?.next&&raw.length>0&&(releases||page.offset<1000);
      if(!page.next||page.items.length-start>=target)break;
    }
-   page.loaded=true;announce(page.items.length+' '+(releases?'discos':'canciones'));
+   page.loaded=true;announce(page.items.length+' '+(releases?(page.items.length===1?'disco':'discos'):(page.items.length===1?'canción':'canciones')));
  }catch(error){if(current()){state.error=error.status===429?'Spotify está limitando las consultas. Inténtalo más tarde.':error.message;rt.status('Artista: '+error.message,true)}}
  finally{if(state.requestId===seq)state.loading=false;if(current())renderCurrent()}
 }
@@ -317,16 +371,21 @@ function traverse(delta){const next=cursor+delta;if(next<0||next>=history.length
 $('tm-catalog-close').onclick=()=>close();$('tm-catalog-back').onclick=()=>window.TransmissionPages?window.TransmissionPages.back():traverse(-1);$('tm-catalog-forward').onclick=()=>window.TransmissionPages?window.TransmissionPages.forward():traverse(1);
 $('tm-catalog-form').onsubmit=event=>{event.preventDefault();clearTimeout(timer);search(field.value,view()?.filter||'track')};
 field.addEventListener('input',()=>clearTimeout(timer));
+field.addEventListener('click',()=>{if(view()?.kind==='search'&&view().entry!=='search'&&!field.value.trim())search()});
 document.querySelectorAll('#tm-catalog-tabs button').forEach(button=>button.onclick=()=>search(field.value,button.dataset.type));
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&opened&&!window.TransmissionPages?.isCatalog){event.preventDefault();close()}});
-document.querySelectorAll('a[href="#explore"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();search()}));
+document.querySelectorAll('a[href="#explore"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();explore()}));
 window.addEventListener('resize',()=>{if(opened)topOffset()});
 window.addEventListener('tm:rotation',()=>{
- const state=view();if(state?.kind!=='search'||state.query)return;
+ const state=view();if(state?.kind!=='search'||state.query||state.entry==='search')return;
  state.suggestions=null;if(opened)renderCurrent();
+});
+window.addEventListener('tm:account-track',()=>{
+ const state=view();if(!opened||state?.kind!=='search'||state.query||state.entry==='search')return;
+ const profile=listeningProfile();renderListeningProfile($('tm-listening-profile'),profile);void enrichListeningProfile(profile);
 });
 function recentKey(){return 'tm:searches:'+(rt.account?.id||'guest')}
 function recentSearches(){try{const value=JSON.parse(localStorage.getItem(recentKey())||'[]');return Array.isArray(value)?value.filter(query=>typeof query==='string'&&query.length<=200).slice(0,8):[]}catch{return []}}
 function remember(query){if(!query)return;try{localStorage.setItem(recentKey(),JSON.stringify([query,...recentSearches().filter(item=>item.toLocaleLowerCase()!==query.toLocaleLowerCase())].slice(0,8)))}catch{}}
-window.TransmissionCatalog={search,open:()=>search(),openAlbum,openArtist,close,showState:state=>{if(state.query)remember(state.query);push(state,{routed:true})},refresh:()=>{const state=view();if(state&&opened){if(!state.loaded){state.error='';void render()}else renderCurrent()}},syncNavigation:navigation,get isOpen(){return opened}};
+window.TransmissionCatalog={search,open:explore,openSearch:()=>search(),openAlbum,openArtist,close,showState:state=>{if(state.query)remember(state.query);push(state,{routed:true})},refresh:()=>{const state=view();if(state&&opened){if(!state.loaded){state.error='';void render()}else renderCurrent()}},syncNavigation:navigation,get isOpen(){return opened}};
 })();

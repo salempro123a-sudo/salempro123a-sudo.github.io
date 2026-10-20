@@ -41,14 +41,19 @@ La referencia de esta ampliación es el ZIP `NTS-extraida.zip` entregado por el 
 
 Buscar, explorar, abrir artistas y álbumes, listas y favoritas son páginas con dirección propia. La portada se sustituye por la página elegida; se conservan la cabecera y el reproductor. Las URL usan rutas después de `#`, compatibles con GitHub Pages y con enlaces directos, recarga y los botones atrás/adelante. Navegar mantiene la misma sesión de audio.
 
-- `#/explorar`: géneros, artistas personales, canciones y búsquedas recientes.
+- `#/explorar`: artistas y géneros de tu perfil reciente y canciones para explorar.
+- `#/buscar`: buscador vacío con las búsquedas recientes.
 - `#/buscar?q=...&tipo=track`: resultados; también admite `artist`, `album` y `playlist`.
 - `#/artista/ID?nombre=...`, `#/album/ID?nombre=...` y `#/playlist/ID?nombre=...`: fichas enlazables.
 - `#/playlists`, `#/guardadas`, `#/rotacion` y `#/historial`: archivo personal.
 - `#/escuchando`: carátula, transporte y posición, álbum y artistas, guardar, compartir y siguientes. También se abre tocando la carátula del reproductor inferior.
 - `#/atajos`: guía de uso y teclado.
 
-Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Se pueden borrar desde Explorar. La lupa y `/` abren la página de búsqueda. La consulta se envía al pulsar Enter o Buscar; no hay otro buscador desplegable ni peticiones por cada letra. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
+Las ocho búsquedas recientes se guardan en este navegador y se separan por cuenta. Aparecen al abrir **Buscar** con la lupa o `/` y se borran desde esa página. Pulsar el campo vacío de Explorar abre el mismo buscador. La consulta se envía al pulsar Enter o Buscar; no hay peticiones por cada letra. Volver a una página conserva los resultados cargados y su posición de lectura durante la sesión.
+
+**Explorar** muestra hasta ocho artistas principales representativos de las canciones recientes. `transmission-profile.js` combina el historial cargado y las escuchas observadas en la sesión, con un máximo de ochenta canciones distintas; cuando hay menos de veinte, utiliza como apoyo la selección ya cargada de las últimas cuatro semanas. Cada canción aporta una vez, con una ponderación moderada por actualidad. Los colaboradores secundarios y las apariciones aisladas no desplazan a los artistas habituales. No se muestran cifras ni porcentajes.
+
+Los géneros salen de las etiquetas reales de esos artistas: se agrupan etiquetas cercanas y aparecen como máximo seis, ponderados por las canciones de la muestra. Se reutilizan los perfiles ya cargados y, solo al abrir Explorar, se completan hasta seis perfiles por cinco minutos, en parejas, con caché y respetando el límite de Spotify. El campo `genres` está [marcado como obsoleto por Spotify](https://developer.spotify.com/documentation/web-api/reference/get-an-artist); los géneros se muestran cuando hay etiquetas suficientes, sin una lista genérica de sustitución.
 
 El temporizador está en **Más opciones**, identificado por un reloj. Permite pausar en 15, 30, 45 o 60 minutos; se cancela eligiendo Desactivado. El tiempo restante aparece dentro de ese menú. Sigue activo al navegar y requiere mantener abierta la pestaña. Al recargar o cerrar la pestaña se cancela. Usa la pausa del SDK o el control de pausa ya autorizado para el dispositivo activo; no pide permisos adicionales ni inicia audio. El historial combina los datos ya cargados con las canciones escuchadas durante la sesión, sin consultas nuevas de historial.
 
@@ -97,6 +102,8 @@ La cuenta del propietario puede abrir **Más opciones → Selección pública** 
 ## Límites y comprobación
 
 Una respuesta 429 conserva la autorización y respeta el plazo disponible. `spotify-status.json` contiene únicamente información pública del límite observado y caduca; no contiene datos de cuenta. Cuando CORS oculta el encabezado de espera y no existe un plazo confirmado, la interfaz distingue una pausa de solicitudes de un restablecimiento conocido de la cuota.
+
+La revisión de reproducción posterior a `7550d78` comparte una única conexión del SDK entre los clics simultáneos. Activa el elemento de audio durante el clic, antes de cargar canciones o discos, y mantiene visibles los errores de reproducción y bloqueo de audio. Una selección de una canción envía su orden de reproducción sin depender de las órdenes de aleatorio o repetición. Se conservan OAuth y sus permisos. Se reprodujeron y comprobaron estos casos con respuestas simuladas, además de las comprobaciones locales de cola, cuenta y perfil; estas comprobaciones no confirman audio real en una sesión Premium.
 
 Las comprobaciones anteriores del repositorio incluyen bibliotecas de 107 canciones, secuencias largas, cambios rápidos de playlist, búsquedas tardías, cola, repetición y renovación de sesión. Esos resultados pertenecen a sus revisiones anteriores.
 

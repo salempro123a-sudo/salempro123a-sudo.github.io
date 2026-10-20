@@ -58,7 +58,7 @@ function render(){
      if(image(t))cover.style.backgroundImage='url("'+image(t)+'")';
      cover.onclick=()=>{
        if(homeLikedOrder!=='mix')return void playLikedFrom(t);
-       rt?.player?.activateElement?.();void rt?.playSequence(active,active.findIndex(track=>track.id===t.id));
+       rt?.primePlayback?.();void rt?.playSequence(active,active.findIndex(track=>track.id===t.id));
      };
      const meta=create('div','tm-liked-caption');
      meta.append(create('strong','',t.name),create('small','',artists(t)));
@@ -138,7 +138,7 @@ async function loadLikedSelection(){
 }
 async function playLikedFrom(track){
  if(!rt?.account)return rt?.playTrack(track);
- rt.player?.activateElement?.();
+ rt.primePlayback?.();
  const tracks=await loadLikedSelection();
  const index=tracks.findIndex(t=>t.id===track.id);
  return index>=0?rt.playSequence(tracks,index):rt.playSequence([track,...tracks]);
@@ -412,7 +412,7 @@ async function playNow(){
 }
 async function playLiked(){
  if(play.disabled)return;
- play.disabled=true;rt?.player?.activateElement?.();
+ play.disabled=true;rt?.primePlayback?.();
  try{await startSongs(homeLikedOrder==='mix'?homeMix:await loadLikedSelection())}finally{render()}
 }
 async function fetchRecent(){
@@ -477,8 +477,8 @@ async function refreshRotation(){
  }catch(e){status('No pude renovar la selección: '+e.message,true)}
  finally{rotationBusy=false;button.disabled=false;button.removeAttribute('aria-busy');if(label)label.textContent=original}
 }
-el('tm-now-play').onclick=()=>{rt?.player?.activateElement?.();void playNow()};
-el('random-discovery').onclick=()=>{rt?.player?.activateElement?.();void surprisePlay()};
+el('tm-now-play').onclick=()=>{rt?.primePlayback?.();void playNow()};
+el('random-discovery').onclick=()=>{rt?.primePlayback?.();void surprisePlay()};
 el('top-refresh').onclick=()=>void refreshRotation();
 play.onclick=()=>void playLiked();
 more.onclick=()=>void loadNext();

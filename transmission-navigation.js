@@ -11,8 +11,8 @@ function parse(hash){
  const [path,query='']=String(hash||'').replace(/^#/,'').split('?'),params=new URLSearchParams(query),parts=path.split('/').filter(Boolean);
  if(!path.startsWith('/'))return null;
  const kind=parts[0];
- if(kind==='explorar')return {kind:'search',query:'',filter:'track',title:'EXPLORAR'};
- if(kind==='buscar')return {kind:'search',query:(params.get('q')||'').slice(0,200),filter:filters.includes(params.get('tipo'))?params.get('tipo'):'track',title:'BÚSQUEDA'};
+ if(kind==='explorar')return {kind:'search',entry:'explore',query:'',filter:'track',title:'EXPLORAR'};
+ if(kind==='buscar')return {kind:'search',entry:'search',query:(params.get('q')||'').slice(0,200),filter:filters.includes(params.get('tipo'))?params.get('tipo'):'track',title:'BUSCAR'};
  if(['artista','album','playlist'].includes(kind)&&valid(parts[1]))return {kind:kind==='artista'?'artist':kind,id:parts[1],name:(params.get('nombre')||'').slice(0,200),tab:params.get('vista')==='discos'?'releases':'tracks',group:['album','single','appears_on'].includes(params.get('grupo'))?params.get('grupo'):'album,single,compilation',title:kind==='artista'?'ARTISTA':kind==='album'?'ÁLBUM':'PLAYLIST'};
  if(kind==='rotacion')return {kind,title:'EN ROTACIÓN',period:['short_term','medium_term','long_term'].includes(params.get('periodo'))?params.get('periodo'):'short_term',type:params.get('vista')==='artists'?'artists':'tracks'};
  const names={playlists:'MIS LISTAS',guardadas:'ME GUSTA',escuchando:'ESCUCHANDO',historial:'HISTORIAL',discos:'DISCOS',atajos:'ATAJOS'};
@@ -20,7 +20,7 @@ function parse(hash){
  return {kind:'missing',title:'PÁGINA NO ENCONTRADA'};
 }
 function catalogURL(state){
- if(state.kind==='search')return state.query?'#/buscar?'+new URLSearchParams({q:state.query,tipo:state.filter||'track'}):'#/explorar';
+ if(state.kind==='search')return state.query?'#/buscar?'+new URLSearchParams({q:state.query,tipo:state.filter||'track'}):state.entry==='search'?'#/buscar':'#/explorar';
  const params=new URLSearchParams({nombre:state.item.name||''});
  if(state.kind==='artist'&&state.tab==='releases'){params.set('vista','discos');if(['album','single','appears_on'].includes(state.group))params.set('grupo',state.group)}
  return '#/'+(state.kind==='artist'?'artista':'album')+'/'+state.item.id+'?'+params;
@@ -54,7 +54,7 @@ async function render(hash,restoring=false){
      let state=snapshots.get(hash);
      if(!state){
        const previous=current.kind==='artist'?[...snapshots.values()].find(saved=>saved.kind==='artist'&&saved.item.id===current.id):null;
-       state=current.kind==='search'?{kind:'search',query:current.query,filter:current.filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false}:{kind:current.kind,item:previous?.artist?.item||{id:current.id,name:current.name||current.title},artist:previous?.artist,tracks:[],albums:[],offset:0,loaded:false,loading:false,next:false,query:''};
+       state=current.kind==='search'?{kind:'search',entry:current.entry,query:current.query,filter:current.filter,items:[],offset:0,next:false,total:0,loaded:false,loading:false}:{kind:current.kind,item:previous?.artist?.item||{id:current.id,name:current.name||current.title},artist:previous?.artist,tracks:[],albums:[],offset:0,loaded:false,loading:false,next:false,query:''};
        rememberState(hash,state);
      }
      if(current.kind==='artist'){state.tab=current.tab;state.group=current.group}
@@ -75,7 +75,7 @@ async function render(hash,restoring=false){
    if(target)target.scrollIntoView({behavior:'instant'});
    else window.scrollTo({top:restoring?scrolls.get(hash)||0:0,behavior:'instant'});
    if(!restoring&&current){
-     if(current.kind==='search')$('tm-catalog-query').focus({preventScroll:true});
+     if(current.kind==='search'&&current.entry==='search')$('tm-catalog-query').focus({preventScroll:true});
      else{const title=document.querySelector('[role="main"]:not([hidden]) h1:not([hidden])');if(title){title.tabIndex=-1;title.focus({preventScroll:true})}}
    }
  });

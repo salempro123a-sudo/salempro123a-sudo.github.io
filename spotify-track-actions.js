@@ -9,7 +9,7 @@ const format=ms=>{const seconds=Math.floor((Number(ms)||0)/1000);return Math.flo
 const menu=make('div','tm-track-menu');menu.hidden=true;menu.setAttribute('role','menu');menu.setAttribute('aria-label','Opciones de canción');document.body.append(menu);
 let anchor=null,active=null;
 function fail(error){rt.status(error.message,true);rt.notify(error.message||'No se pudo completar la acción.')}
-async function run(button,operation){if(button.disabled)return;button.disabled=true;try{return await operation()}catch(error){fail(error)}finally{if(button.isConnected)button.disabled=false}}
+async function run(button,operation,options={}){if(button.disabled)return;if(options.play)rt.primePlayback?.();button.disabled=true;try{return await operation()}catch(error){fail(error)}finally{if(button.isConnected)button.disabled=false}}
 function close(restore=false){const previous=anchor;menu.hidden=true;anchor?.setAttribute('aria-expanded','false');anchor=null;active=null;if(restore&&previous?.isConnected)previous.focus()}
 function position(){
  if(!anchor?.isConnected){close();return}
@@ -55,7 +55,7 @@ function row(track,options={}){
  copy.append(play,subtitle);
  if(options.number!==undefined)main.append(make('span','tm-song-number',String(options.number).padStart(2,'0')));
  if(!options.noCover)main.append(cover);else item.classList.add('tm-song-without-cover');
- main.append(copy);play.onclick=()=>void run(play,()=>options.onPlay?options.onPlay():rt.playSequence(options.tracks||[track],options.index||0));cover.onclick=()=>play.click();
+ main.append(copy);play.onclick=()=>void run(play,()=>options.onPlay?options.onPlay():rt.playSequence(options.tracks||[track],options.index||0),{play:true});cover.onclick=()=>play.click();
  const duration=make('span','tm-song-duration',track.duration_ms?format(track.duration_ms):'');
  const add=make('button','tm-song-add','+');add.type='button';add.title='Añadir a la cola: '+track.name;add.setAttribute('aria-label',add.title);add.disabled=track.is_playable===false;add.onclick=()=>void run(add,()=>rt.enqueueTracks([track]));
  const more=optionsButton(track);item.append(main,duration);if(!options.hideAdd)item.append(add);item.append(more);
